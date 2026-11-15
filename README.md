@@ -1,1 +1,25 @@
+# Proyecto Braille
 
+Proyecto para enseñar Braille a niños ("desarrollado con metodología **Scrum** y tablero **Kanban**") en GitHub Projects.
+
+## Equipo
+| Rol | Integrante |
+|-----|-----------|
+| Product Owner | _pendiente_ |
+| Scrum Master | _pendiente_ |
+| Equipo de desarrollo | _pendiente_ |
+
+## Cómo está organizado el repo
+- `docs/investigacion/`: lo que vamos investigando sobre Braille y su enseñanza.
+- `docs/requisitos/`: requisitos funcionales y no funcionales.
+- `docs/actas/`: actas de cada ceremonia (planning, review, retrospectiva).
+- `docs/diagramas/`: diagramas en código (Mermaid), versionados junto al proyecto.
+- `docs/definition-of-done.md`: nuestro DoD.
+- `.github/ISSUE_TEMPLATE/`: plantillas para épicas, historias de usuario e historias técnicas.
+
+## Cómo trabajamos
+1. Todo requerimiento se registra como **Issue** (épica, historia de usuario o historia técnica).
+2. Los Issues viven en el tablero de GitHub Projects (Backlog, Sprint Backlog, En progreso, En revisión, Hecho).
+3. Cada ceremonia deja un acta en `docs/actas/`.
+4. Si un cambio altera el diseño original, se actualizan los diagramas y la documentación en el mismo Pull Request.
+5. Un Issue solo pasa a Hecho si cumple el [DoD](docs/definition-of-done.md).
