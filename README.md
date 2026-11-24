@@ -23,3 +23,14 @@ Proyecto para enseñar Braille a niños ("desarrollado con metodología **Scrum*
 3. Cada ceremonia deja un acta en `docs/actas/`.
 4. Si un cambio altera el diseño original, se actualizan los diagramas y la documentación en el mismo Pull Request.
 5. Un Issue solo pasa a Hecho si cumple el [DoD](docs/definition-of-done.md).
+
+## Trazabilidad del Taller
+
+Las historias funcionales del Taller deben mantener referencias explícitas a los requisitos que implementan:
+
+| Historia | Requisito funcional | Requisitos no funcionales | Resultado documentado |
+|----------|---------------------|----------------------------|-----------------------|
+| [#6 Exportar lámina A4 a SVG](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/6) | [RF-01](docs/requisitos/funcionales.md) | RNF-02 | Generación vectorial estándar de la composición actual |
+| [#7 Validar distancia mínima](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/7) | [RF-02](docs/requisitos/funcionales.md) | RNF-01 y RNF-03 | Advertencia de pares de puntos menores a 2.5 mm |
+
+Las decisiones de diseño del Taller deben representarse en [los diagramas](docs/diagramas/ejemplo-casos-de-uso.md) y verificarse contra el [DoD](docs/definition-of-done.md).
