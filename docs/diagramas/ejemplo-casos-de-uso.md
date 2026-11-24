@@ -22,9 +22,15 @@ flowchart TD
     Validar -->|Distancia menor a 2.5 mm| Advertencia
     Advertencia -->|Mover o separar puntos| Validar
     Validar -->|Todos cumplen RNF-01| Lienzo
+    Lienzo --> Reticula{RF-03: Snap-to-grid}
+    Reticula -->|Posición ajustada| Punto[(Punto o celdilla)]
+    Reticula -->|Interacción terminada| Validar
+    Punto --> Validar
 ```
 
 ## Trazabilidad
 
 - [RF-01](../requisitos/funcionales.md) y [RNF-02](../requisitos/no-funcionales.md) corresponden a la historia [#6](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/6).
 - [RF-02](../requisitos/funcionales.md), [RNF-01](../requisitos/no-funcionales.md) y [RNF-03](../requisitos/no-funcionales.md) corresponden a la historia [#7](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/7).
+- [RF-02](../requisitos/funcionales.md) y [RNF-04](../requisitos/no-funcionales.md) corresponden a las implementaciones técnicas [#9](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/9) y [#10](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/10).
+- [RF-03](../requisitos/funcionales.md) y [RNF-05](../requisitos/no-funcionales.md) corresponden a la historia [#11](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/11).

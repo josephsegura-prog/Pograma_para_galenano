@@ -32,5 +32,8 @@ Las historias funcionales del Taller deben mantener referencias explícitas a lo
 |----------|---------------------|----------------------------|-----------------------|
 | [#6 Exportar lámina A4 a SVG](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/6) | [RF-01](docs/requisitos/funcionales.md) | RNF-02 | Generación vectorial estándar de la composición actual |
 | [#7 Validar distancia mínima](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/7) | [RF-02](docs/requisitos/funcionales.md) | RNF-01 y RNF-03 | Advertencia de pares de puntos menores a 2.5 mm |
+| [#9 Integrar cálculo euclidiano](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/9) | [RF-02](docs/requisitos/funcionales.md) | RNF-01, RNF-03 y RNF-04 | Servicio de separación física activado tras interacciones y arrastres |
+| [#10 Conectar validación con TallerView](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/10) | [RF-02](docs/requisitos/funcionales.md) | RNF-01, RNF-03 y RNF-04 | Clase visual y tooltip exacto en los puntos conflictivos |
+| [#11 Implementar snap-to-grid](https://github.com/josephsegura-prog/Pograma_para_galenano/issues/11) | [RF-03](docs/requisitos/funcionales.md) | RNF-05 | Ajuste automático de puntos y celdillas a una retícula de 5 mm |
 
 Las decisiones de diseño del Taller deben representarse en [los diagramas](docs/diagramas/ejemplo-casos-de-uso.md) y verificarse contra el [DoD](docs/definition-of-done.md).
