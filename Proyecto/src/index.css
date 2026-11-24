@@ -1,0 +1,242 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg: #f8f5ef;
+    --surface: #ffffff;
+    --surface-dim: #ebe1d5;
+    --ink: #1c1917;
+    --muted: #686158;
+    --line: #dfd7c8;
+    --accent: #c88a1e;
+    --accent-ink: #ffffff;
+    --accent-soft: #fdf2e6;
+    --ok: #235e4f;
+    --ok-soft: #eef7f4;
+    --warn: #ba1a1a;
+    --warn-soft: #fdf1ef;
+    --lock: #8e867c;
+    color-scheme: light;
+  }
+
+  /* Modo Alto Contraste WCAG AAA (Amarillo sobre Negro) */
+  :root.contraste {
+    --bg: #000000;
+    --surface: #000000;
+    --surface-dim: #141414;
+    --ink: #ffffff;
+    --muted: #ffe500;
+    --line: #ffffff;
+    --accent: #ffe500;
+    --accent-ink: #000000;
+    --accent-soft: #1a1a00;
+    --ok: #5cff9d;
+    --ok-soft: #002914;
+    --warn: #ff9b6b;
+    --warn-soft: #2e0800;
+    --lock: #bbbbbb;
+    color-scheme: dark;
+  }
+
+  html {
+    font-size: 17px;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html.grande {
+    font-size: 21px;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg);
+    color: var(--ink);
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.font-editorial {
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+.font-legible {
+  font-family: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Estilos SVG del motor interactivo de láminas (100% K sobre blanco puro) */
+.lam-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  touch-action: manipulation;
+}
+
+.lam-svg .papel {
+  fill: #ffffff;
+  stroke: #dfd7c8;
+  stroke-width: 2;
+}
+
+.lam-svg .esq {
+  fill: #000000;
+}
+
+.lam-svg .dot {
+  fill: #1c1917;
+  transition: fill 0.2s ease;
+}
+
+.lam-svg .hit {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 4;
+}
+
+.lam-svg .pt {
+  cursor: pointer;
+  outline: none;
+}
+
+.lam-svg .pt:focus-visible .hit {
+  stroke: #c88a1e;
+  stroke-width: 4;
+}
+
+.lam-svg .pt.hecho .dot {
+  fill: #235e4f;
+}
+
+.lam-svg .pt.sig .hit {
+  stroke: #c88a1e;
+  stroke-width: 4;
+  stroke-dasharray: 7 6;
+}
+
+.lam-svg .pt.mal .dot {
+  fill: #ba1a1a;
+}
+
+.lam-svg .trazo {
+  stroke: #235e4f;
+  stroke-width: 7;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lam-svg .celda {
+  cursor: pointer;
+  outline: none;
+}
+
+.lam-svg .celda:focus-visible rect {
+  stroke: #c88a1e;
+  stroke-width: 4;
+}
+
+.lam-svg .celda rect {
+  fill: #ffffff;
+  stroke: #686158;
+  stroke-width: 2;
+  stroke-dasharray: 8 6;
+}
+
+.lam-svg .celda.visto rect {
+  fill: #fdf2e6;
+  stroke: #1c1917;
+}
+
+.lam-svg .muro {
+  fill: #1c1917;
+}
+
+.lam-svg .rastro {
+  fill: #b8b0a4;
+}
+
+.lam-svg .ficha {
+  fill: #c88a1e;
+  stroke: #1c1917;
+  stroke-width: 3;
+  transition: transform 0.18s ease;
+}
+
+.lam-svg .meta {
+  fill: none;
+  stroke: #235e4f;
+  stroke-width: 5;
+}
+
+.lam-svg .cuerpo-l {
+  fill: none;
+  stroke: #1c1917;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lam-svg .lbl {
+  font: 700 15px 'Atkinson Hyperlegible Next', sans-serif;
+  fill: #686158;
+}
+
+.lam-svg .dedo {
+  fill: rgba(200, 138, 30, 0.48);
+  stroke: #1c1917;
+  stroke-width: 3;
+  transition: transform 0.45s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lam-svg .dedo,
+  .lam-svg .ficha,
+  .lam-svg .dot,
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Resaltado visual de incumplimiento de distancia mínima (< 2.5 mm WCAG AAA tiflológico) */
+.error-distancia {
+  color: #dc2626;
+}
+
+circle.error-distancia {
+  fill: #dc2626 !important;
+  stroke: #991b1b;
+  stroke-width: 0.3;
+}
+
+circle.error-distancia-halo {
+  fill: rgba(220, 38, 38, 0.16);
+  stroke: #dc2626;
+  stroke-width: 0.7;
+}
+
+line.error-distancia-linea {
+  stroke: #dc2626;
+  stroke-width: 0.75;
+  stroke-dasharray: 1.1 0.8;
+}
+

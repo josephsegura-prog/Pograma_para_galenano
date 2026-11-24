@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camino Táctil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Aula por módulos tipo Skool: barra lateral de unidades que se abren en orden + zona de trabajo.
+     Azul tinta y amarillo girasol: alto contraste pensado para baja visión. */
+  --bg:#F2F4F9; --surface:#FFFFFF; --ink:#13203B; --muted:#55607A; --line:#D7DCE8;
+  --accent:#FFC233; --accent-ink:#13203B; --accent-soft:#FFF4D6;
+  --ok:#0D7A6C; --ok-soft:#DCF2EE; --warn:#A8441A; --warn-soft:#FBE7DD; --lock:#98A1B6;
+  --display:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px; --shadow:0 1px 2px rgba(19,32,59,.06),0 6px 20px rgba(19,32,59,.06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1424; --surface:#151F37; --ink:#EDF1F9; --muted:#A6AFC4; --line:#2A3654;
+    --accent:#FFC94D; --accent-ink:#13203B; --accent-soft:#3A3220;
+    --ok:#34C7B2; --ok-soft:#173A39; --warn:#F28A5B; --warn-soft:#3D241B; --lock:#5E6987;
+    --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1424; --surface:#151F37; --ink:#EDF1F9; --muted:#A6AFC4; --line:#2A3654;
+  --accent:#FFC94D; --accent-ink:#13203B; --accent-soft:#3A3220;
+  --ok:#34C7B2; --ok-soft:#173A39; --warn:#F28A5B; --warn-soft:#3D241B; --lock:#5E6987;
+  --shadow:none; color-scheme:dark;
+}
+:root.contraste{
+  --bg:#000; --surface:#000; --ink:#FFF; --muted:#FFF; --line:#FFF;
+  --accent:#FFE500; --accent-ink:#000; --accent-soft:#222;
+  --ok:#5CFF9D; --ok-soft:#052; --warn:#FF9B6B; --warn-soft:#300; --lock:#BBB; --shadow:none; color-scheme:dark;
+}
+html{font-size:17px}
+html.grande{font-size:21px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5;min-height:100%}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:1.9rem;font-weight:800}
+h2{font-size:1.4rem;font-weight:800}
+h3{font-size:1.1rem;font-weight:600}
+p{margin:0}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #2F6BFF;outline-offset:2px}
+.contraste :focus-visible{outline-color:#FFE500}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Barra superior */
+.top{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1240px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.marca{display:flex;gap:10px;align-items:center;text-decoration:none;margin-right:auto}
+.marca-txt b{font-family:var(--display);font-size:1.2rem;font-weight:800;display:block;line-height:1}
+.marca-txt small{color:var(--muted);font-size:.78rem}
+.top-acc{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--bg)}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:999px;cursor:pointer;font-weight:700;font-size:.88rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.contraste .seg button[aria-pressed="true"]{background:#FFE500;color:#000}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--surface);font-size:.88rem;font-weight:700;cursor:pointer}
+.chip.nube::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.chip.local::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--lock)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;text-decoration:none;min-height:44px}
+.btn:hover{border-color:var(--ink)}
+.btn-p{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn-p:hover{border-color:var(--ink)}
+.btn-ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.contraste .btn-ok{color:#000}
+.btn-s{padding:6px 12px;min-height:36px;font-size:.9rem;border-radius:10px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-link{border:0;background:none;padding:4px 0;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+.wrap{max-width:1240px;margin:0 auto;padding:24px 16px 64px}
+.banner{border:1.5px solid var(--warn);background:var(--warn-soft);border-radius:var(--r);padding:12px 16px;margin-bottom:18px;font-size:.95rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:20px}
+.muted{color:var(--muted)}
+.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+/* Aula */
+.hola{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-bottom:28px}
+@media (max-width:860px){.hola{grid-template-columns:1fr}}
+.seguir{background:#13203B;color:#fff;border-radius:var(--r);padding:22px;display:flex;flex-direction:column;gap:10px;justify-content:space-between}
+.contraste .seguir{border:2px solid #FFE500}
+.seguir .eyebrow{color:var(--accent)}
+.seguir h2{color:inherit}
+.etapas{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+@media (max-width:560px){.etapas{grid-template-columns:repeat(2,1fr)}}
+.etapa{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.84rem;background:var(--bg)}
+.etapa b{display:block;font-size:.95rem}
+.etapa svg{display:block;margin-bottom:6px}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.mod{display:flex;flex-direction:column;overflow:hidden}
+.mod-cab{height:120px;background:var(--accent-soft);border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+.mod-cab svg{position:absolute;inset:0;width:100%;height:100%}
+.mod-num{position:absolute;left:16px;top:12px;font-family:var(--display);font-weight:800;font-size:2.4rem;color:var(--ink);opacity:.9}
+.mod-body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px;flex:1}
+.mod.cerrado .mod-cab{filter:grayscale(1);opacity:.65}
+.estado{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:999px;width:fit-content}
+.estado.abierto{background:var(--ok-soft);color:var(--ok)}
+.estado.cerrado{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.estado.prep{background:var(--accent-soft);color:var(--ink)}
+.barra{height:10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.barra i{display:block;height:100%;background:var(--ok);border-radius:999px}
+.perfil-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:12px;align-items:end}
+@media (max-width:760px){.perfil-form{grid-template-columns:1fr}}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:.9rem}
+input[type=text],select,textarea,input[type=number]{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+textarea{min-height:90px;resize:vertical}
+
+/* Unidad */
+.clase{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.clase{grid-template-columns:1fr}}
+.lado{position:sticky;top:84px}
+@media (max-width:900px){.lado{position:static}}
+.lado-cab{padding:16px 16px 12px;border-bottom:1px solid var(--line)}
+.ulist{list-style:none;margin:0;padding:6px}
+.ulist li a{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center;padding:9px 10px;border-radius:10px;text-decoration:none;font-size:.93rem}
+.ulist li a:hover{background:var(--bg)}
+.ulist li a[aria-current="page"]{background:var(--accent-soft);font-weight:700}
+.ulist li.lock a{color:var(--muted)}
+.ico{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.75rem;font-weight:700;border:1.5px solid var(--line);background:var(--surface)}
+.done .ico{background:var(--ok);border-color:var(--ok);color:#fff}
+.contraste .done .ico{color:#000}
+.lock .ico{background:var(--bg)}
+.u-cab{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin:8px 0 18px;flex-wrap:wrap}
+.tabs button{border:0;background:none;padding:10px 14px;font-weight:700;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1.5px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.contraste .tabs button[aria-selected="true"]{border-bottom-color:#FFE500}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}}
+.obj{border-left:5px solid var(--accent);background:var(--accent-soft);border-radius:0 12px 12px 0;padding:14px 16px;font-size:1.05rem}
+.pasos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;counter-reset:p}
+.pasos li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.pasos li.ok{background:var(--ok-soft);border-color:var(--ok)}
+.pasos input{width:26px;height:26px;margin:2px 0 0;accent-color:var(--ok);cursor:pointer}
+.pasos label{cursor:pointer}
+.pasos .n{font-weight:700;color:var(--muted);font-size:.85rem;display:block}
+.mano{display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:start}
+.cierre{margin-top:22px;border:2px solid var(--ink);border-radius:var(--r);padding:20px;background:var(--surface)}
+.contraste .cierre{border-color:#FFE500}
+.logros{display:flex;gap:8px;flex-wrap:wrap}
+.logros label{display:flex;gap:8px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:700;min-height:44px}
+.logros input{accent-color:var(--ok);width:20px;height:20px}
+.logros label:has(input:checked){border-color:var(--ok);background:var(--ok-soft)}
+ul.mat{margin:0;padding-left:20px}
+
+/* Lámina */
+.lam{background:#fff;border-radius:12px;border:1px solid var(--line);padding:8px;position:relative}
+.lam svg{width:100%;height:auto;display:block;touch-action:manipulation}
+.papel{fill:#fff;stroke:#CBD2E1;stroke-width:2}
+.esq{fill:#1C1C1E}
+.dot{fill:#1C1C1E;transition:fill .2s}
+.hit{fill:transparent;stroke:transparent;stroke-width:4}
+.pt{cursor:pointer;outline:none}
+.pt:focus-visible .hit{stroke:#2F6BFF}
+.pt.hecho .dot{fill:#0D7A6C}
+.pt.sig .hit{stroke:#F2A600;stroke-dasharray:7 6}
+.pt.mal .dot{fill:#A8441A}
+.trazo{stroke:#0D7A6C;stroke-width:7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.celda rect{fill:#fff;stroke:#9AA3B8;stroke-width:2;stroke-dasharray:8 6}
+.celda.visto rect{fill:#FFF4D6}
+.muro{fill:#2B3040}
+.rastro{fill:#B6BDCC}
+.ficha{fill:#FFC233;stroke:#13203B;stroke-width:3;transition:transform .18s}
+.meta{fill:none;stroke:#0D7A6C;stroke-width:5}
+.cuerpo-l{fill:none;stroke:#13203B;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.lbl{font:700 15px var(--body);fill:#55607A}
+.dedo{fill:rgba(255,194,51,.55);stroke:#13203B;stroke-width:3;transition:transform .45s ease}
+@media (prefers-reduced-motion:reduce){.dedo,.ficha,.dot{transition:none}}
+.act-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px}
+.estado-act{min-height:3.2em;margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--line);font-weight:700;font-size:1.05rem}
+.estado-act.bien{background:var(--ok-soft);border-color:var(--ok)}
+.estado-act.mal{background:var(--warn-soft);border-color:var(--warn)}
+.pad-flechas{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,48px);gap:6px;justify-content:center;margin-top:10px}
+.pad-flechas button{font-size:1.3rem}
+.sub{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.sub button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.contraste .sub button[aria-pressed="true"]{background:#FFE500;color:#000}
+
+/* Docente */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:16px 0 24px}
+.tile{padding:16px}
+.tile b{font-family:var(--display);font-size:2rem;font-weight:800;display:block;font-variant-numeric:tabular-nums}
+.tabla-w{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.num{font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:700;margin-right:4px}
+.pill.solo{background:var(--ok-soft);color:var(--ok)}
+.pill.ayuda{background:var(--accent-soft);color:var(--ink)}
+.pill.aun{background:var(--warn-soft);color:var(--warn)}
+.sec{margin-top:34px}
+.cont-mod{margin-top:14px}
+.cont-row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.cont-row.oculta{opacity:.55}
+.calib{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:700px){.calib{grid-template-columns:1fr}}
+input[type=range]{width:100%;accent-color:var(--ink)}
+
+dialog{border:0;border-radius:18px;padding:0;max-width:min(720px,94vw);width:100%;background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,16,30,.55)}
+.dlg-c{padding:22px;display:flex;flex-direction:column;gap:14px;max-height:84vh;overflow:auto}
+.dlg-pie{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:90vw;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.contraste .toast{background:#FFE500;color:#000}
+.ajustes{display:flex;flex-direction:column;gap:10px}
+.ajustes label{display:flex;gap:10px;align-items:center;font-weight:700}
+.ajustes input[type=checkbox]{width:22px;height:22px;accent-color:var(--ok)}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in" id="top"></div></header>
+<main class="wrap" id="main"></main>
+<div id="vivo" class="sr" aria-live="polite"></div>
+<dialog id="dlg"></dialog>
+
+<script>
+/* =========================================================
+   CONTENIDO PEDAGÓGICO (Módulo 1 · Fase I del proyecto)
+   ========================================================= */
+const ETAPAS = {1:'Puntos y dimensiones',2:'Orientación espacial',3:'Formas abiertas',4:'Formas cerradas',5:'Texturas y realidad',6:'Celdilla Braille'};
+const MODULOS = [
+  {id:'m1', num:1, titulo:'Primeros puntos, espacio y formas', desc:'Diez unidades para preparar las manos antes del Braille: el punto, su tamaño, los caminos, el centro del cuerpo, las direcciones, las líneas y las figuras.'},
+  {id:'m2', num:2, titulo:'Texturas y mundo real', desc:'Del dibujo en relieve al objeto de verdad: la silueta de un árbol y su corteza, una flor, una casa.'},
+  {id:'m3', num:3, titulo:'Hacia la celdilla Braille', desc:'La celdilla de seis puntos, sus posiciones y las primeras letras.'}
+];
+const BASE = [
+ {id:'m1u1', modulo:'m1', etapa:1, titulo:'¿Hay punto o no hay punto?', duracion:'10 a 15 min',
+  objetivo:'Que el niño descubra con la yema del dedo si en un lugar hay un punto en relieve o no hay nada.',
+  materiales:['Lámina 1 impresa en relieve (6 cuadros)','Una mesa despejada','Un lugar tranquilo, sin televisor ni radio'],
+  pasos:['Siente al niño frente a la mesa y ponga la lámina derecha, con la esquina marcada (el triángulo) arriba a la izquierda.','Tome con suavidad la mano con la que el niño come y apoye la yema de su dedo índice en el primer cuadro.','Pregúntele: "¿Hay punto o no hay punto?". Espere la respuesta sin apurarlo.','Si acierta, celébrelo con la voz: "¡Muy bien, lo encontraste!". Si no, vuelvan a pasar el dedo despacio juntos.','Repitan con los 6 cuadros. Al final cuenten juntos cuántos puntos encontraron.'],
+  mano:'Ponga su mano encima de la del niño, como un guante, y deje libre su dedo índice. Muévanse despacio y sin apretar: el niño debe sentir, no empujar.',
+  consejo:'Si el niño retira la mano, pare y jueguen a tocar cosas conocidas (una toalla, una moneda, una hoja). Aceptar el contacto también se aprende.',
+  competencia:'Discrimina táctilmente la presencia o ausencia de un punto en relieve.', resultado:'Identifica correctamente al menos 4 de los 6 cuadros.', criterio:'Observe si explora con la yema (no con la uña ni con la palma) y si responde con seguridad.',
+  actividad:{tipo:'presencia'}},
+ {id:'m1u2', modulo:'m1', etapa:1, titulo:'Puntos grandes y puntos pequeños', duracion:'15 min',
+  objetivo:'Que el niño note la diferencia de tamaño entre un punto grande y uno pequeño y adapte la yema del dedo a cada uno.',
+  materiales:['Lámina 2 en relieve (8 puntos de dos tamaños)','Una pelota grande y una canica o botón pequeño'],
+  pasos:['Antes de la lámina, póngale en las manos la pelota y luego el botón. Diga: "Esto es grande, esto es pequeño".','Ponga la lámina con la esquina marcada arriba a la izquierda y lleve el dedo del niño al primer punto grande.','Ahora llévelo a un punto pequeño y diga: "Este es pequeño, casi no se siente".','Pídale: "Busca un punto grande". Cuando lo encuentre, pídale uno pequeño. Alternen.','Terminen cuando haya encontrado 3 grandes y 3 pequeños.'],
+  mano:'Guíe solo la muñeca, no los dedos. Así el niño mueve sus dedos libremente y siente el tamaño por sí mismo.',
+  consejo:'Si confunde los tamaños, vuelvan a la pelota y el botón. Comparar con objetos reales ayuda mucho.',
+  competencia:'Diferencia dimensiones de puntos en relieve (grande / pequeño).', resultado:'Señala 3 puntos grandes y 3 pequeños cuando se le pide.', criterio:'Registre si necesita volver a los objetos concretos o si discrimina directamente en la lámina.',
+  actividad:{tipo:'tamanos'}},
+ {id:'m1u3', modulo:'m1', etapa:1, titulo:'El camino de puntos', duracion:'15 min',
+  objetivo:'Que el niño siga una fila de puntos de izquierda a derecha sin saltarse ninguno, como se lee el Braille.',
+  materiales:['Lámina 3 en relieve (fila de 8 puntos)','Un carrito de juguete o una ficha'],
+  pasos:['Jueguen primero en la mesa: deslice el carrito de izquierda a derecha y diga "el carrito va para este lado".','Ponga la lámina y lleve el dedo del niño al primer punto, el que es doble (el punto de partida).','Diga: "Vamos a seguir el camino" y avancen punto por punto hacia la derecha, contando en voz alta.','Al llegar al final, diga: "¡Llegamos!" y vuelvan juntos al punto de partida.','Repitan 3 veces. La última vez, suelte un poco la mano y deje que el niño avance solo.'],
+  mano:'Al inicio su mano va encima de la del niño. En cada repetición, aflójela un poco. La meta es que al final el niño haga el camino solo.',
+  consejo:'Si se salta puntos, vayan más despacio y cuenten en voz alta cada punto.',
+  competencia:'Realiza rastreo digital ordenado de izquierda a derecha.', resultado:'Recorre la fila completa sin omitir puntos en al menos 1 de 3 intentos sin ayuda.', criterio:'Observe la dirección del movimiento y si regresa al punto de partida por sí mismo.',
+  actividad:{tipo:'camino'}},
+ {id:'m1u4', modulo:'m1', etapa:1, titulo:'El laberinto', duracion:'15 a 20 min',
+  objetivo:'Que el niño siga un camino de puntos, encuentre los bloqueos y busque otra salida hasta llegar a la meta.',
+  materiales:['Lámina 4 en relieve (laberinto)','Un premio pequeño para la meta (un aplauso, una canción)'],
+  pasos:['Cuente la historia: "Un conejito quiere llegar a su casa y tiene que encontrar el camino".','Ponga el dedo del niño en la salida (el punto doble) y explíquele que las zonas lisas y altas son paredes.','Avancen siguiendo los puntitos. Cuando toquen una pared, diga: "¡Uy, bloqueado! Busquemos otro camino".','Al llegar a la meta (el cuadro), celébrenlo con el premio.','Hagan el laberinto 2 veces. La segunda, deje que el niño decida por dónde ir.'],
+  mano:'En los cruces, detenga la mano del niño y pregúntele: "¿Seguimos derecho o damos la vuelta?". Déjelo decidir.',
+  consejo:'Equivocarse de camino es parte del juego. No corrija rápido: dele tiempo para que sienta la pared.',
+  competencia:'Resuelve recorridos táctiles con caminos abiertos y bloqueos.', resultado:'Llega a la meta reconociendo al menos 2 bloqueos.', criterio:'Valore la persistencia ante el bloqueo y la capacidad de retroceder.',
+  actividad:{tipo:'laberinto'}},
+ {id:'m1u5', modulo:'m1', etapa:1, titulo:'Reto: encuentra los 10 puntos', duracion:'15 min',
+  objetivo:'Que el niño explore toda la lámina de forma ordenada hasta encontrar los 10 puntos escondidos.',
+  materiales:['Lámina 5 en relieve (10 puntos repartidos)','10 fichas, granos o tapas para contar'],
+  pasos:['Explique el reto: "En esta hoja hay 10 puntos escondidos. ¡Vamos a encontrarlos todos!".','Empiecen en la esquina marcada y recorran la hoja por filas, de izquierda a derecha y de arriba hacia abajo.','Cada vez que encuentre un punto, el niño pone una ficha en un vaso y cuentan juntos.','Si ya pasaron por toda la hoja y faltan puntos, vuelvan a empezar desde la esquina.','Al llegar a 10, celebren el logro.'],
+  mano:'Enséñele a usar las dos manos: una se queda quieta en la esquina como "ancla" y la otra busca.',
+  consejo:'Si se cansa, dejen el reto en 5 puntos y terminen otro día. El reto debe ser divertido.',
+  competencia:'Explora sistemáticamente una superficie y mantiene la permanencia del objeto.', resultado:'Encuentra los 10 puntos con una exploración ordenada.', criterio:'Observe si usa la mano de anclaje y si sigue un orden (filas) o explora al azar.',
+  actividad:{tipo:'buscar', n:10}},
+ {id:'m1u6', modulo:'m1', etapa:2, titulo:'Mi cuerpo es el centro', duracion:'15 min',
+  objetivo:'Que el niño reconozca su propio cuerpo como el punto de referencia (centroide) desde donde se ubica todo lo demás.',
+  materiales:['Espacio libre en el piso','Una cinta o pañuelo para la muñeca derecha'],
+  pasos:['Ponga la cinta en la muñeca derecha del niño. Diga: "Esta es tu mano derecha".','Toque con él su barriga y diga: "Este es tu centro. Desde aquí empieza todo".','Pídale que se toque la cabeza ("arriba") y luego los pies ("abajo").','Pídale que levante la mano derecha (la de la cinta) y luego la izquierda.','Hagan el juego "Simón dice": "Simón dice: toca tu centro, toca arriba, toca tu mano izquierda".'],
+  mano:'Aquí no se guía la mano sobre la lámina: se acompaña el cuerpo. Párese detrás del niño, mirando hacia el mismo lado; así su derecha es la misma que la de él.',
+  consejo:'Nunca se ponga de frente para enseñar derecha e izquierda: se invierten y el niño se confunde.',
+  competencia:'Construye su esquema corporal y reconoce su cuerpo como punto de referencia.', resultado:'Señala centro, arriba, abajo, derecha e izquierda en su cuerpo.', criterio:'Registre si diferencia derecha e izquierda sin la cinta.',
+  actividad:{tipo:'cuerpo'}},
+ {id:'m1u7', modulo:'m1', etapa:2, titulo:'Arriba, abajo, izquierda, derecha', duracion:'15 min',
+  objetivo:'Que el niño mueva el dedo desde un punto central hacia arriba, abajo, izquierda y derecha cuando se le pide.',
+  materiales:['Lámina 7 en relieve (un punto central y 4 puntos alrededor)'],
+  pasos:['Ponga el dedo del niño en el punto del centro. Diga: "Aquí estás tú, en tu centro".','Diga "sube" y lleve su dedo hacia el punto de arriba. Vuelvan al centro.','Repitan con "baja", "a la izquierda" y "a la derecha", volviendo siempre al centro.','Ahora diga una dirección sin guiar la mano y deje que el niño la busque.','Hagan 8 órdenes en desorden. Celebren cada acierto.'],
+  mano:'Después de cada movimiento, vuelvan al centro. Ese regreso es tan importante como el movimiento.',
+  consejo:'Si duda entre izquierda y derecha, recuérdele la cinta de la unidad anterior.',
+  competencia:'Se orienta en el plano a partir de un centro: arriba, abajo, izquierda, derecha.', resultado:'Ejecuta correctamente 6 de 8 órdenes de dirección.', criterio:'Observe si regresa al centro sin que se le pida.',
+  actividad:{tipo:'direcciones'}},
+ {id:'m1u8', modulo:'m1', etapa:2, titulo:'El punto de partida', duracion:'15 min',
+  objetivo:'Que el niño use el punto doble de la esquina como lugar de salida y regreso cada vez que explora una lámina.',
+  materiales:['Lámina 8 en relieve (punto doble y 4 puntos)'],
+  pasos:['Muéstrele el punto doble de la esquina de arriba a la izquierda. Diga: "Esta es tu casa. Siempre salimos de aquí".','Desde la casa, salgan a buscar cualquier punto de la hoja.','Cuando lo encuentre, diga: "¡Ahora volvamos a casa!" y regresen al punto doble.','Repitan hasta visitar los 4 puntos, volviendo a casa cada vez.','Al final pregúntele: "¿Dónde está tu casa?" y deje que la encuentre solo.'],
+  mano:'Al volver a casa, deje que el niño deslice el dedo por la hoja. No levante su mano: el camino de regreso también se siente.',
+  consejo:'Este punto de partida va a aparecer en todas las láminas siguientes. Vale la pena repetirlo varias veces.',
+  competencia:'Usa un punto de referencia para iniciar y finalizar la exploración.', resultado:'Regresa al punto de partida de forma autónoma en 3 de 4 recorridos.', criterio:'Observe si busca el punto doble al iniciar sin que se lo indiquen.',
+  actividad:{tipo:'referencia'}},
+ {id:'m1u9', modulo:'m1', etapa:3, titulo:'Líneas rectas, inclinadas y curvas', duracion:'20 min',
+  objetivo:'Que el niño siga líneas de puntos en distintas direcciones y note cuando una línea cambia de rumbo poco a poco (curva).',
+  materiales:['Láminas 9A a 9D en relieve (4 líneas)','Un cordón o lana'],
+  pasos:['Con el cordón estirado sobre la mesa, deje que el niño lo recorra: "Esta línea es recta".','Doble el cordón en forma de arco: "Esta línea se curva, va cambiando de camino".','En la lámina, recorran la línea acostada (horizontal), desde el punto doble.','Sigan con la línea parada (vertical), la inclinada (diagonal) y por último la curva.','En la curva, pregunte: "¿Sientes que el camino va subiendo y luego bajando?".'],
+  mano:'En la curva, acompañe solo con dos dedos sobre la muñeca. El niño debe sentir el cambio de dirección, no que usted lo lleve.',
+  consejo:'Si una línea se le hace difícil, vuelvan al cordón y luego regresen a la lámina.',
+  competencia:'Reconoce líneas abiertas rectas, diagonales y curvas.', resultado:'Recorre las 4 líneas y distingue la curva de las rectas.', criterio:'Valore la continuidad del trazo y la verbalización del cambio de dirección.',
+  actividad:{tipo:'lineas'}},
+ {id:'m1u10', modulo:'m1', etapa:4, titulo:'Cerrar la figura: cuadrado y círculo', duracion:'20 min',
+  objetivo:'Que el niño recorra un contorno completo y descubra que al volver al inicio la figura queda cerrada.',
+  materiales:['Láminas 10A y 10B en relieve','Un bloque cuadrado y una tapa redonda'],
+  pasos:['Den al niño el bloque cuadrado. Recorran juntos su borde: "Tiene esquinas, y al dar la vuelta llegamos al mismo lugar".','En la lámina 10A, empiecen en el punto doble y recorran el cuadrado hasta volver al inicio.','Pregunte: "¿Cuántas esquinas sentiste?". Cuenten juntos: 4.','Ahora la tapa redonda: "Esta no tiene esquinas, es redondita".','En la lámina 10B recorran el círculo hasta cerrarlo. Comparen las dos figuras.'],
+  mano:'Deténganse en cada esquina del cuadrado y diga "¡esquina!". En el círculo, el movimiento es continuo, sin paradas.',
+  consejo:'Si al niño le cuesta cerrar la figura, pongan un granito de arroz pegado en el punto de inicio para que lo reconozca al volver.',
+  competencia:'Cierra contornos e identifica figuras geométricas básicas (cuadrado, círculo).', resultado:'Recorre ambas figuras hasta cerrarlas y nombra cuál tiene esquinas.', criterio:'Observe si reconoce el punto de cierre y si cuenta las esquinas.',
+  actividad:{tipo:'formas'}}
+];
+
+/* Geometría compartida por la lámina interactiva y la lámina para imprimir (viewBox 600 x 400) */
+const W=600, H=400;
+function filaPts(x1,y1,x2,y2,n){const a=[];for(let i=0;i<n;i++){const t=i/(n-1);a.push([Math.round(x1+(x2-x1)*t),Math.round(y1+(y2-y1)*t)]);}return a;}
+const GEO = {
+  presencia: [0,1,2,3,4,5].map(i=>({x:65+(i%3)*165, y:55+Math.floor(i/3)*160, w:140, h:130, punto:[1,0,1,1,0,1][i]})),
+  tamanos: [[110,110,1],[235,85,0],[360,130,1],[490,95,0],[150,285,0],[280,305,1],[400,265,0],[505,300,1]],
+  camino: filaPts(90,200,510,200,8),
+  laberinto: ["#########","#S..#...#","###.#.#.#","#...#.#.#","#.###.#.#","#.....#M#","#########"],
+  buscar: [[95,85],[235,65],[395,95],[525,70],[160,190],[320,210],[485,200],[95,320],[265,330],[470,325]],
+  direcciones: {c:[300,200], o:{arriba:[300,65], abajo:[300,335], izquierda:[110,200], derecha:[490,200]}},
+  referencia: {casa:[75,75], pts:[[260,130],[470,95],[400,300],[170,300]]},
+  lineas: {
+    horizontal:{nombre:'Acostada', pts:filaPts(90,200,510,200,8)},
+    vertical:{nombre:'Parada', pts:filaPts(300,55,300,345,6)},
+    diagonal:{nombre:'Inclinada', pts:filaPts(120,330,480,70,7)},
+    curva:{nombre:'Curva', pts:Array.from({length:9},(_,i)=>{const t=i/8;return [Math.round(90+420*t),Math.round(310-220*Math.sin(Math.PI*t))];})}
+  },
+  formas: {
+    cuadrado:{nombre:'Cuadrado', cerrada:true, pts:(()=>{const a=[],x0=190,y0=80,s=220,k=4;for(let i=0;i<k;i++)a.push([x0+s*i/k,y0]);for(let i=0;i<k;i++)a.push([x0+s,y0+s*i/k]);for(let i=0;i<k;i++)a.push([x0+s-s*i/k,y0+s]);for(let i=0;i<k;i++)a.push([x0,y0+s-s*i/k]);return a.map(p=>p.map(Math.round));})()},
+    circulo:{nombre:'Círculo', cerrada:true, pts:Array.from({length:14},(_,i)=>{const a=-Math.PI/2+i*2*Math.PI/14;return [Math.round(300+125*Math.cos(a)),Math.round(195+125*Math.sin(a))];})}
+  },
+  cuerpo: {cabeza:[300,72,'La cabeza está ARRIBA.'], centro:[300,180,'Aquí, en la barriga, está tu CENTRO. Desde aquí empieza todo.'], manoIzq:[160,238,'Esta es tu mano IZQUIERDA.'], manoDer:[440,238,'Esta es tu mano DERECHA.'], pies:[300,360,'Los pies están ABAJO.']}
+};
+const NUMS=['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez'];
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+const LS = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+const S = {
+  modo:'local', rol:LS.get('ct-rol','acompanante'), puedeDocente:false, uid:null, existe:false, soloLectura:false,
+  perfil:null, done:{}, checks:{}, actividades:{}, intentos:{}, notaDocente:'',
+  contenido:{}, alumnos:[], cargando:false,
+  ajustes:Object.assign({voz:true, grande:false, contraste:false, escala:1}, LS.get('ct-ajustes',{})),
+  tab:'guia'
+};
+(function cargarLocal(){const p=LS.get('ct-progreso',null); if(p){Object.assign(S,{perfil:p.perfil||null,done:p.done||{},checks:p.checks||{},actividades:p.actividades||{},intentos:p.intentos||{}});}
+  const c=LS.get('ct-contenido',null); if(c) S.contenido=c;})();
+let DB=null, USER=null, TTS=null, DL=null;
+
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+const $=(s,el=document)=>el.querySelector(s);
+const $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;d.setAttribute('role','status');document.body.appendChild(d);setTimeout(()=>d.remove(),3200);}
+function vivo(t){$('#vivo').textContent=t;}
+function fecha(ts){if(!ts)return '—';const d=new Date(ts);const dias=Math.floor((Date.now()-ts)/864e5);if(dias<1)return 'hoy';if(dias<2)return 'ayer';if(dias<8)return 'hace '+dias+' días';return d.toLocaleDateString('es-CO',{day:'numeric',month:'short'});}
+function aplicarAjustes(){const r=document.documentElement;r.classList.toggle('grande',!!S.ajustes.grande);r.classList.toggle('contraste',!!S.ajustes.contraste);LS.set('ct-ajustes',S.ajustes);}
+aplicarAjustes();
+
+/* Sonidos (Web Audio) */
+let AC=null;
+function tono(f=520,d=.14,tipo='sine',vol=.18,cuando=0){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const t=AC.currentTime+cuando,o=AC.createOscillator(),g=AC.createGain();o.type=tipo;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d+.02);}catch(e){}}
+const SON={
+  bien:()=>{tono(660,.12);tono(880,.16,'sine',.18,.1);},
+  mal:()=>tono(150,.28,'square',.06),
+  vacio:()=>tono(240,.08,'triangle',.08),
+  paso:(i)=>tono(330+i*45,.13),
+  fin:()=>{[523,659,784,1046].forEach((f,i)=>tono(f,.22,'sine',.16,i*.13));},
+  muro:()=>tono(110,.22,'square',.07)
+};
+/* Voz */
+let hablando=false;
+async function hablar(txt){
+  if(!txt) return;
+  if(TTS){try{await TTS.speak(String(txt).slice(0,1990),{language:'es'});return;}catch(e){ if(e&&e.code==='not_granted'){TTS=null;} else return; }}
+  try{ if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);u.lang='es-CO';u.rate=.95;const v=speechSynthesis.getVoices().find(v=>/^es/i.test(v.lang));if(v)u.voice=v;speechSynthesis.speak(u);} }catch(e){}
+}
+function callar(){try{TTS&&TTS.stop();}catch(e){} try{window.speechSynthesis&&speechSynthesis.cancel();}catch(e){}}
+function vozDisponible(){return !!TTS || ('speechSynthesis' in window);}
+
+/* =========================================================
+   UNIDADES, ORDEN Y DESBLOQUEO
+   ========================================================= */
+const CAMPOS=['titulo','objetivo','duracion','materiales','pasos','mano','consejo','competencia','resultado','criterio','oculta','etapa'];
+function aplicar(b,ov){if(!ov)return b;const o={...b};CAMPOS.forEach(k=>{if(ov[k]!==undefined)o[k]=ov[k];});o.editada=true;return o;}
+function unidadesDe(mid,todas=false){
+  const base=BASE.filter(b=>b.modulo===mid).map((b,i)=>({...aplicar(b,S.contenido[b.id]),orden:i+1,base:true}));
+  const cus=Object.entries(S.contenido).filter(([id,c])=>c&&c.custom&&c.modulo===mid).map(([id,c])=>({...c,id,orden:typeof c.orden==='number'?c.orden:100,actividad:c.actividad||{tipo:'ninguna'},materiales:c.materiales||[],pasos:c.pasos||[]}));
+  let a=[...base,...cus].sort((x,y)=>x.orden-y.orden);
+  return todas?a:a.filter(u=>!u.oculta);
+}
+function secuencia(){return MODULOS.flatMap(m=>unidadesDe(m.id));}
+function unidad(id){return MODULOS.flatMap(m=>unidadesDe(m.id,true)).find(u=>u.id===id);}
+const esDocente=()=>S.rol==='docente';
+function abierta(u){if(esDocente())return true;const s=secuencia();const i=s.findIndex(x=>x.id===u.id);return i>=0&&s.slice(0,i).every(x=>S.done[x.id]);}
+function pendiente(){return secuencia().find(x=>!S.done[x.id]);}
+function anteriorDe(u){const s=secuencia();const i=s.findIndex(x=>x.id===u.id);return i>0?s[i-1]:null;}
+function siguienteDe(u){const s=secuencia();const i=s.findIndex(x=>x.id===u.id);return i>=0?s[i+1]:null;}
+function numEnModulo(u){const l=unidadesDe(u.modulo);return {i:l.findIndex(x=>x.id===u.id)+1,n:l.length};}
+function avanceMod(mid,done=S.done){const l=unidadesDe(mid);const h=l.filter(u=>done[u.id]).length;return {h,n:l.length,p:l.length?Math.round(h*100/l.length):0};}
+
+/* =========================================================
+   GUARDAR PROGRESO
+   ========================================================= */
+const colas={};
+function enCola(path,fn){colas[path]=(colas[path]||Promise.resolve()).then(fn).catch(e=>errorDb(e));return colas[path];}
+function errorDb(e){
+  const c=e&&e.code;
+  if(c==='invalid_argument'&&!S.soloLectura){S.soloLectura=true;render();toast('No se pudo guardar en la nube. El avance queda guardado en este dispositivo.');}
+  else if(c==='quota_exceeded'){toast('La base de datos está llena. Avísale al docente.');}
+  else if(c==='unavailable'){toast('Sin conexión por ahora. Intentaremos de nuevo.');}
+}
+let tGuardar=null; S.pendiente=false;
+function datosProgreso(){return {perfil:S.perfil,done:S.done,checks:S.checks,actividades:S.actividades,intentos:S.intentos,actualizado:Date.now()};}
+function guardar(){
+  LS.set('ct-progreso',datosProgreso());
+  if(S.modo!=='nube'||S.soloLectura||!S.uid) return;
+  S.pendiente=true; clearTimeout(tGuardar);
+  tGuardar=setTimeout(()=>{
+    const ref=DB.doc('progreso/'+S.uid); const d=datosProgreso();
+    enCola(ref.path,async()=>{ if(S.existe){await ref.update(d);} else {await ref.set(d); S.existe=true;} }).finally(()=>{S.pendiente=false;});
+  },500);
+}
+function guardarContenido(id,obj){
+  if(obj===null) delete S.contenido[id]; else S.contenido[id]=obj;
+  LS.set('ct-contenido',S.contenido);
+  if(S.modo==='nube'){const ref=DB.doc('contenido/'+id);enCola(ref.path,()=>obj===null?ref.delete():ref.set(obj));}
+  render();
+}
+
+/* =========================================================
+   BARRA SUPERIOR
+   ========================================================= */
+function logoSVG(){return `<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="var(--ink)"/><circle cx="14" cy="11" r="3.4" fill="var(--accent)"/><circle cx="26" cy="11" r="3.4" fill="var(--accent)"/><circle cx="14" cy="20" r="3.4" fill="var(--accent)"/><circle cx="26" cy="20" r="3.4" fill="var(--surface)" opacity=".28"/><circle cx="14" cy="29" r="3.4" fill="var(--surface)" opacity=".28"/><circle cx="26" cy="29" r="3.4" fill="var(--accent)"/></svg>`;}
+function renderTop(){
+  const rolSel = (S.puedeDocente||S.modo==='local') ? `<div class="seg" role="group" aria-label="Ver la app como"><button data-rol="acompanante" aria-pressed="${!esDocente()}">Acompañante</button><button data-rol="docente" aria-pressed="${esDocente()}">Docente</button></div>`:'';
+  const nino = S.perfil&&!esDocente() ? `<button class="chip" id="b-perfil" title="Cambiar datos">Con ${esc(S.perfil.nino)}</button>`:'';
+  const est = S.modo==='nube' ? `<span class="chip nube" title="El avance se guarda en la nube">${S.soloLectura?'Solo lectura':'Guardado en línea'}</span>` : `<span class="chip local" title="El avance se guarda en este dispositivo">${S.cargando?'Conectando…':'En este dispositivo'}</span>`;
+  $('#top').innerHTML=`<a class="marca" href="#aula">${logoSVG()}<span class="marca-txt"><b>Camino Táctil</b><small>Guías de aprendizaje inclusivo</small></span></a>
+  <nav class="top-acc" aria-label="Principal">
+    <a class="btn btn-s" href="#aula">Aula</a>
+    ${esDocente()?'<a class="btn btn-s" href="#docente">Panel docente</a>':''}
+    ${rolSel}${nino}${est}
+    <button class="btn btn-s" id="b-ajustes" aria-label="Ajustes de lectura y voz">Ajustes</button>
+  </nav>`;
+  $$('[data-rol]').forEach(b=>b.onclick=()=>{S.rol=b.dataset.rol;LS.set('ct-rol',S.rol);if(!esDocente()&&location.hash==='#docente')location.hash='#aula';render();});
+  const bp=$('#b-perfil'); if(bp) bp.onclick=dlgPerfil;
+  $('#b-ajustes').onclick=dlgAjustes;
+}
+
+/* =========================================================
+   AULA (inicio)
+   ========================================================= */
+function etapaIcon(n){
+  const s={1:'<circle cx="10" cy="12" r="4"/><circle cx="24" cy="12" r="2.4"/><circle cx="36" cy="12" r="4"/>',
+  2:'<circle cx="22" cy="12" r="4"/><path d="M22 2v4M22 18v4M10 12h4M30 12h4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+  3:'<path d="M4 18 C14 2, 30 2, 40 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>',
+  4:'<rect x="6" y="3" width="16" height="16" rx="1" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="34" cy="11" r="8" fill="none" stroke="currentColor" stroke-width="3"/>'}[n];
+  return `<svg width="44" height="24" viewBox="0 0 44 24" fill="currentColor" aria-hidden="true">${s}</svg>`;
+}
+function cabModulo(m){
+  const pats={m1:()=>{let s='';for(let r=0;r<4;r++)for(let c=0;c<14;c++){const on=((r*7+c*3)%5)<2;s+=`<circle cx="${110+c*26}" cy="${22+r*26}" r="${on?6:3}" fill="var(--ink)" opacity="${on?.85:.25}"/>`;}return s;},
+    m2:()=>`<path d="M120 110 C150 40, 190 40, 210 80 S270 120, 300 60 S360 20, 400 70" fill="none" stroke="var(--ink)" stroke-width="6" stroke-dasharray="1 14" stroke-linecap="round" opacity=".7"/><circle cx="330" cy="60" r="28" fill="none" stroke="var(--ink)" stroke-width="4" stroke-dasharray="2 8" opacity=".5"/>`,
+    m3:()=>{let s='';[0,1,2,3].forEach(k=>{[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]].forEach(([c,r],j)=>{const on=[[1,0,0,0,0,0],[1,1,0,0,0,0],[1,0,0,1,0,0],[1,0,0,1,1,0]][k][j];s+=`<circle cx="${150+k*70+c*22}" cy="${30+r*24}" r="${on?7:3.5}" fill="var(--ink)" opacity="${on?.85:.25}"/>`;});});return s;}};
+  return `<div class="mod-cab"><svg viewBox="0 0 460 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${pats[m.id]?pats[m.id]():''}</svg><span class="mod-num">${String(m.num).padStart(2,'0')}</span></div>`;
+}
+function renderAula(){
+  const sig=pendiente();
+  let saludo='';
+  if(esDocente()){
+    saludo=`<div class="card pad stack"><span class="eyebrow">Vista docente</span><h1>Prepare la clase y revise el avance</h1><p class="muted">Como docente ve todas las unidades abiertas. Los acompañantes las abren una por una: cada unidad se desbloquea cuando terminan la anterior.</p><div class="row"><a class="btn btn-p" href="#docente">Ir al panel docente</a><a class="btn" href="#u-m1u1">Abrir la Unidad 1</a></div>${etapasHTML()}</div>
+    <div class="seguir"><span class="eyebrow">Módulo 1 · Fase piloto</span><h2>10 unidades antes del abecedario Braille</h2><p style="opacity:.85">Puntos, orientación desde el centro del cuerpo, formas abiertas y formas cerradas. Cada unidad trae guía para la familia, lámina interactiva con sonido y cartilla para imprimir en relieve.</p></div>`;
+  } else if(!S.perfil){
+    saludo=`<div class="card pad stack" style="grid-column:1/-1"><span class="eyebrow">Bienvenida</span><h1>Aprendamos juntos, paso a paso</h1><p class="muted" style="max-width:62ch">Esta app le explica a usted, en palabras sencillas, cómo acompañar al niño en cada ejercicio con las láminas en relieve. No necesita saber Braille. Las unidades se abren en orden: cuando terminan una, se abre la siguiente.</p>
+    <form class="perfil-form" id="f-perfil"><label class="f" for="p-nino">Nombre del niño o niña<input type="text" id="p-nino" required autocomplete="off" placeholder="Ej.: Sofía"></label><label class="f" for="p-acomp">Su nombre<input type="text" id="p-acomp" required autocomplete="off" placeholder="Ej.: Luz Marina"></label><label class="f" for="p-rel">Usted es<select id="p-rel"><option>Mamá</option><option>Papá</option><option>Abuela o abuelo</option><option>Tía o tío</option><option>Docente de aula</option><option>Otro acompañante</option></select></label><button class="btn btn-p" type="submit">Empezar</button></form>${etapasHTML()}</div>`;
+  } else {
+    const t=sig?`<span class="eyebrow">Sigan donde quedaron</span><h2>${esc(sig.titulo)}</h2><p style="opacity:.85">Unidad ${numEnModulo(sig).i} del Módulo ${MODULOS.find(m=>m.id===sig.modulo).num} · ${esc(ETAPAS[sig.etapa]||'')} · ${esc(sig.duracion||'')}</p><div><a class="btn btn-p" href="#u-${sig.id}">Continuar</a></div>`
+      :`<span class="eyebrow">¡Lo lograron!</span><h2>Terminaron todas las unidades disponibles</h2><p style="opacity:.85">Pronto el docente abrirá nuevas unidades.</p>`;
+    saludo=`<div class="card pad stack"><span class="eyebrow">Hola, ${esc(S.perfil.acompanante)}</span><h1>Este es el camino de ${esc(S.perfil.nino)}</h1><p class="muted">Cada unidad se abre cuando terminan la anterior. Así nadie se adelanta y las manos aprenden en el orden correcto.</p>${etapasHTML()}</div><div class="seguir">${t}</div>`;
+  }
+  const mods=MODULOS.map((m,k)=>{
+    const l=unidadesDe(m.id), a=avanceMod(m.id);
+    const prep=!l.length, ab=!prep&&abierta(l[0]);
+    const est=prep?'<span class="estado prep">En preparación</span>':ab?(a.h===a.n?'<span class="estado abierto">Completado</span>':'<span class="estado abierto">Abierto</span>'):'<span class="estado cerrado">🔒 Se abre al terminar el Módulo '+MODULOS[k-1].num+'</span>';
+    const btn=prep?(esDocente()?`<button class="btn btn-s" data-nueva="${m.id}">Crear primera unidad</button>`:''):ab?`<a class="btn ${a.h<a.n?'btn-p':''}" href="#u-${(l.find(u=>!S.done[u.id])||l[0]).id}">${a.h?'Continuar':'Entrar'}</a>`:'';
+    return `<article class="card mod ${!ab&&!prep?'cerrado':''}">${cabModulo(m)}<div class="mod-body"><span class="eyebrow">Módulo ${m.num}</span><h3>${esc(m.titulo)}</h3><p class="muted" style="font-size:.93rem">${esc(m.desc)}</p>${est}${prep?'':`<div class="barra" role="progressbar" aria-valuenow="${a.p}" aria-valuemin="0" aria-valuemax="100" aria-label="Avance del módulo"><i style="width:${a.p}%"></i></div><p class="muted" style="font-size:.88rem">${a.h} de ${a.n} unidades · ${a.p}%</p>`}<div style="margin-top:auto">${btn}</div></div></article>`;
+  }).join('');
+  $('#main').innerHTML=`${banner()}<section class="hola">${saludo}</section><h2 style="margin-bottom:14px">Aula</h2><div class="mods">${mods}</div>`;
+  const f=$('#f-perfil'); if(f) f.onsubmit=e=>{e.preventDefault();S.perfil={nino:$('#p-nino').value.trim(),acompanante:$('#p-acomp').value.trim(),relacion:$('#p-rel').value};if(!S.perfil.nino||!S.perfil.acompanante)return;guardar();render();toast('¡Listo! Empiecen por la Unidad 1.');};
+  $$('[data-nueva]').forEach(b=>b.onclick=()=>dlgEditar(null,b.dataset.nueva));
+}
+function etapasHTML(){return `<div class="etapas">${[1,2,3,4].map(n=>`<div class="etapa">${etapaIcon(n)}<b>${n}. ${ETAPAS[n]}</b></div>`).join('')}</div>`;}
+function banner(){
+  if(S.soloLectura) return `<div class="banner" role="status"><b>El avance se está guardando solo en este dispositivo.</b> Para que el docente vea el progreso, pídale que le comparta la app con permiso de <b>Colaborador</b> (Contributor).</div>`;
+  return '';
+}
+
+/* =========================================================
+   UNIDAD (vista de clase)
+   ========================================================= */
+let limpiar=[];
+function correrLimpieza(){limpiar.forEach(f=>{try{f();}catch(e){}});limpiar=[];}
+function renderUnidad(id){
+  const u=unidad(id);
+  if(!u){location.hash='#aula';return;}
+  if(!abierta(u)){const a=anteriorDe(u);toast('Esta unidad se abre cuando terminen "'+(a?a.titulo:'la anterior')+'".');location.hash='#u-'+(pendiente()||u).id;return;}
+  if(!esDocente()&&!S.perfil){location.hash='#aula';toast('Primero escriba el nombre del niño.');return;}
+  const m=MODULOS.find(x=>x.id===u.modulo), ne=numEnModulo(u);
+  const tabs=[['guia','Guía para el acompañante'],['lamina','Lámina interactiva'],...(esDocente()?[['docente','Para el docente']]:[])];
+  if(!tabs.some(t=>t[0]===S.tab)) S.tab='guia';
+  $('#main').innerHTML=`${banner()}<div class="clase">
+    <aside class="card lado" id="lado"></aside>
+    <section>
+      <div class="u-cab">
+        <a class="btn-link" href="#aula">← Volver al aula</a>
+        <span class="eyebrow">Módulo ${m.num} · Unidad ${ne.i} de ${ne.n} · Etapa: ${esc(ETAPAS[u.etapa]||'—')}</span>
+        <h1>${esc(u.titulo)}</h1>
+        <div class="row">
+          <span class="muted">⏱ ${esc(u.duracion||'')}</span>
+          ${vozDisponible()?`<button class="btn btn-s" id="b-oir">🔊 Escuchar la guía</button><button class="btn btn-s" id="b-callar">Parar voz</button>`:''}
+          <button class="btn btn-s" id="b-cartilla">Descargar cartilla</button>
+          ${esDocente()?`<button class="btn btn-s" id="b-editar">Editar unidad</button>`:''}
+        </div>
+      </div>
+      <div class="tabs" role="tablist">${tabs.map(([k,t])=>`<button role="tab" id="tab-${k}" aria-selected="${S.tab===k}" data-tab="${k}">${t}</button>`).join('')}</div>
+      <div id="panel" role="tabpanel"></div>
+      <div id="cierre"></div>
+    </section></div>`;
+  pintarLado(u); pintarPanel(u); pintarCierre(u);
+  $$('[data-tab]').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;$$('[data-tab]').forEach(x=>x.setAttribute('aria-selected',x===b));pintarPanel(u);});
+  const bo=$('#b-oir'); if(bo) bo.onclick=()=>hablar(textoGuia(u));
+  const bc=$('#b-callar'); if(bc) bc.onclick=callar;
+  $('#b-cartilla').onclick=()=>descargarCartilla(u);
+  const be=$('#b-editar'); if(be) be.onclick=()=>dlgEditar(u);
+}
+function textoGuia(u){return `${u.titulo}. Objetivo: ${u.objetivo} Paso a paso. ${(u.pasos||[]).map((p,i)=>`Paso ${i+1}: ${p}`).join(' ')} Cómo guiar la mano: ${u.mano||''} Si algo no sale: ${u.consejo||''}`;}
+function pintarLado(u){
+  const m=MODULOS.find(x=>x.id===u.modulo), l=unidadesDe(m.id), a=avanceMod(m.id);
+  $('#lado').innerHTML=`<div class="lado-cab stack" style="gap:8px"><span class="eyebrow">Módulo ${m.num}</span><h3>${esc(m.titulo)}</h3>${esDocente()?'<p class="muted" style="font-size:.85rem">Vista docente: todas abiertas</p>':`<div class="barra"><i style="width:${a.p}%"></i></div><p class="muted" style="font-size:.85rem">${a.h} de ${a.n} completadas · ${a.p}%</p>`}</div>
+  <ol class="ulist">${l.map((x,i)=>{const d=S.done[x.id],ab=abierta(x);return `<li class="${d?'done':''} ${!ab?'lock':''}"><a href="#u-${x.id}" ${x.id===u.id?'aria-current="page"':''} aria-label="Unidad ${i+1}: ${esc(x.titulo)}${d?', completada':!ab?', bloqueada':''}"><span class="ico">${d?'✓':!ab?'🔒':i+1}</span><span>${esc(x.titulo)}</span></a></li>`;}).join('')}</ol>`;
+}
+function pintarPanel(u){
+  correrLimpieza();
+  const p=$('#panel');
+  if(S.tab==='guia'){
+    const ch=S.checks[u.id]||[];
+    p.innerHTML=`<div class="stack" style="gap:18px">
+      <div class="obj"><span class="eyebrow">Para qué sirve</span><p style="margin-top:4px">${esc(u.objetivo)}</p></div>
+      <div class="grid2">
+        <div class="card pad stack"><h3>Lo que necesitan</h3><ul class="mat">${(u.materiales||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>Solo la lámina</li>'}</ul></div>
+        <div class="card pad mano"><svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="27" fill="var(--accent-soft)"/><path d="M20 40 V24 a3 3 0 0 1 6 0 V14 a3 3 0 0 1 6 0 v14 M32 26 a3 3 0 0 1 6 0 v6 M38 30 a3 3 0 0 1 5 1 v4 c0 6-4 10-10 10h-4c-5 0-8-3-10-6l-4-6a3 3 0 0 1 5-3l2 3" fill="none" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="stack" style="gap:6px"><h3>Cómo guiar la mano</h3><p>${esc(u.mano||'')}</p></div></div>
+      </div>
+      <div class="stack"><h2>Paso a paso</h2><p class="muted">Marque cada paso cuando lo hayan hecho con el niño.</p>
+      <ol class="pasos">${(u.pasos||[]).map((x,i)=>`<li class="${ch[i]?'ok':''}"><input type="checkbox" id="ps-${i}" data-paso="${i}" ${ch[i]?'checked':''} ${esDocente()?'disabled':''}><label for="ps-${i}"><span class="n">Paso ${i+1}</span>${esc(x)}</label></li>`).join('')}</ol></div>
+      <div class="card pad stack" style="border-left:5px solid var(--warn)"><h3>Si algo no sale</h3><p>${esc(u.consejo||'')}</p></div>
+      <div class="card pad stack"><h3>Lámina para imprimir</h3><p class="muted">Así se ve la zona táctil: solo relieve, sin colores. La esquina con triángulo va arriba a la izquierda.</p><div class="row">${laminas(u).map(l=>`<figure style="margin:0;flex:1 1 220px"><div class="lam">${l.svg.replace('<svg ','<svg role="img" aria-label="'+esc(l.titulo)+'" ')}</div><figcaption class="muted" style="font-size:.85rem;margin-top:4px">${esc(l.titulo)}</figcaption></figure>`).join('')||'<p class="muted">Esta unidad no tiene lámina.</p>'}</div>
+      <div class="row">${laminas(u).length?`<button class="btn btn-s" id="b-svg">${DL?'Descargar lámina para impresora en relieve (SVG)':'Copiar lámina (SVG)'}</button>`:''}</div></div>
+    </div>`;
+    $$('[data-paso]').forEach(c=>c.onchange=()=>{const a=(S.checks[u.id]||[]).slice();a[+c.dataset.paso]=c.checked;S.checks[u.id]=a;c.closest('li').classList.toggle('ok',c.checked);guardar();pintarCierre(u);});
+    const bs=$('#b-svg'); if(bs) bs.onclick=()=>descargarSVG(u);
+  } else if(S.tab==='lamina'){
+    p.innerHTML=`<div class="stack"><p class="muted" style="max-width:68ch">Practique aquí antes de hacerlo con el niño: cada punto suena al tocarlo. También pueden jugarlo juntos: el niño escucha los sonidos mientras usted toca. ${S.actividades[u.id]?'<b style="color:var(--ok)">✓ Ya completaron esta práctica.</b>':''}</p><div id="act"></div></div>`;
+    montarActividad($('#act'),u);
+  } else {
+    p.innerHTML=`<div class="stack" style="gap:16px"><div class="grid2">
+      <div class="card pad stack"><span class="eyebrow">Competencia</span><p>${esc(u.competencia||'—')}</p></div>
+      <div class="card pad stack"><span class="eyebrow">Resultado de aprendizaje esperado</span><p>${esc(u.resultado||'—')}</p></div></div>
+      <div class="card pad stack"><span class="eyebrow">Criterio de evaluación formativa</span><p>${esc(u.criterio||'—')}</p></div>
+      <div class="card pad stack"><span class="eyebrow">Adaptación al aula de párvulos y preescolar</span><p>Trabaje esta unidad en grupos pequeños: los compañeros videntes pueden hacer el mismo ejercicio con los ojos tapados. Así la actividad es de todos y nadie queda aparte.</p></div>
+      <div class="row"><button class="btn" id="b-cart2">Descargar cartilla con sección docente</button><a class="btn" href="#docente">Ver seguimiento de los niños</a></div></div>`;
+    $('#b-cart2').onclick=()=>descargarCartilla(u,true);
+  }
+}
+function pintarCierre(u){
+  const c=$('#cierre'); if(!c) return;
+  if(esDocente()){c.innerHTML='';return;}
+  const d=S.done[u.id], ch=S.checks[u.id]||[], n=(u.pasos||[]).length, hechos=ch.filter(Boolean).length;
+  const sig=siguienteDe(u);
+  if(d){
+    c.innerHTML=`<div class="cierre stack"><span class="eyebrow" style="color:var(--ok)">✓ Unidad completada ${fecha(d.t)}</span><h3>${d.logro==='solo'?esc(S.perfil.nino)+' lo logró solo':esc(S.perfil.nino)+' lo logró con ayuda'}</h3><p class="muted">Pueden repetirla cuando quieran: repetir ayuda a que las manos recuerden.</p><div class="row">${sig?`<a class="btn btn-p" href="#u-${sig.id}">Ir a la siguiente: ${esc(sig.titulo)} →</a>`:'<a class="btn btn-p" href="#aula">Volver al aula</a>'}</div></div>`;
+    return;
+  }
+  const it=S.intentos[u.id]||0;
+  c.innerHTML=`<div class="cierre stack"><h2>¿Cómo les fue?</h2>
+    <p class="muted">Pasos realizados: <b>${hechos} de ${n}</b>${hechos<n?' — marque los pasos en la guía cuando los hagan.':''}${it?` · Intentos anteriores: ${it}`:''}</p>
+    <fieldset style="border:0;padding:0;margin:0"><legend class="sr">Resultado del niño</legend><div class="logros">
+      <label><input type="radio" name="logro" value="solo"> Lo logró solo</label>
+      <label><input type="radio" name="logro" value="ayuda"> Lo logró con ayuda</label>
+      <label><input type="radio" name="logro" value="aun"> Aún no, lo repetiremos</label></div></fieldset>
+    <div class="row"><button class="btn btn-ok" id="b-fin" disabled>Completar unidad y abrir la siguiente</button><span class="muted" id="fin-msg" style="font-size:.9rem"></span></div></div>`;
+  const btn=$('#b-fin'), msg=$('#fin-msg');
+  const upd=()=>{const v=($('input[name=logro]:checked')||{}).value;
+    if(hechos<n){btn.disabled=true;msg.textContent='Faltan pasos por marcar.';return;}
+    if(!v){btn.disabled=true;msg.textContent='Elija cómo le fue al niño.';return;}
+    btn.disabled=false; msg.textContent=''; btn.textContent=v==='aun'?'Guardar intento y repetir otro día':'Completar unidad y abrir la siguiente';};
+  $$('input[name=logro]').forEach(r=>r.onchange=upd); upd();
+  btn.onclick=()=>{const v=($('input[name=logro]:checked')||{}).value; if(!v)return;
+    if(v==='aun'){S.intentos[u.id]=(S.intentos[u.id]||0)+1;guardar();toast('Intento guardado. ¡Mañana lo intentan de nuevo!');pintarCierre(u);return;}
+    S.done[u.id]={t:Date.now(),logro:v};guardar();SON.fin();
+    const s=siguienteDe(u); toast(s?'¡Unidad completada! Se abrió: '+s.titulo:'¡Completaron todas las unidades!');
+    vivo('Unidad completada.'); location.hash=s?'#u-'+s.id:'#aula'; };
+}
+
+/* =========================================================
+   LÁMINAS INTERACTIVAS
+   ========================================================= */
+const esquina='<path class="esq" d="M14 14 H50 L14 50 Z"/>';
+function svgBase(inner,extra=''){return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" ${extra}><rect class="papel" x="1" y="1" width="${W-2}" height="${H-2}" rx="10"/>${esquina}${inner}</svg>`;}
+function ptHTML(i,x,y,r,label,doble=false){return `<g class="pt" data-i="${i}" tabindex="0" role="button" aria-label="${esc(label)}"><circle class="hit" cx="${x}" cy="${y}" r="${Math.max(r+14,24)}"/>${doble?`<circle class="dot" cx="${x}" cy="${y}" r="${r+9}" style="fill:none;stroke:#1C1C1E;stroke-width:5"/>`:''}<circle class="dot" cx="${x}" cy="${y}" r="${r}"/></g>`;}
+function enlazar(svg,fn){$$('[data-i]',svg).forEach(g=>{g.addEventListener('click',()=>fn(+g.dataset.i,g));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fn(+g.dataset.i,g);}});});}
+
+function montarActividad(host,u){
+  const tipo=(u.actividad||{}).tipo||'ninguna';
+  if(tipo==='ninguna'){host.innerHTML='<div class="card pad"><p class="muted">Esta unidad se trabaja solo con material físico. Siga la guía paso a paso.</p></div>';return;}
+  host.innerHTML=`<div class="act-bar"><div id="act-sub" class="sub"></div><div class="row" style="gap:6px"><button class="btn btn-s" id="act-demo" hidden>▶ Ver demostración</button><button class="btn btn-s" id="act-rei">Reiniciar</button></div></div><div class="lam" id="act-lam"></div><div class="estado-act" id="act-est" aria-live="polite"></div><div id="act-extra"></div>`;
+  const ctx={lam:$('#act-lam',host), est:$('#act-est',host), sub:$('#act-sub',host), extra:$('#act-extra',host), demo:$('#act-demo',host),
+    decir(t,clase='',voz=true){this.est.textContent=t;this.est.className='estado-act '+clase;if(voz&&S.ajustes.voz)hablar(t);},
+    listo(){ if(!S.actividades[u.id]){S.actividades[u.id]=true;guardar();} SON.fin(); }};
+  const iniciar=()=>{correrLimpieza();ctx.demo.hidden=true;ctx.sub.innerHTML='';ctx.extra.innerHTML='';(ACT[tipo]||ACT.buscar)(ctx,u);};
+  $('#act-rei',host).onclick=iniciar; iniciar();
+}
+const ACT={
+  presencia(ctx){
+    const c=GEO.presencia;
+    ctx.lam.innerHTML=svgBase(c.map((k,i)=>`<g class="celda" data-i="${i}" tabindex="0" role="button" aria-label="Cuadro ${i+1}"><rect x="${k.x}" y="${k.y}" width="${k.w}" height="${k.h}" rx="10"/>${k.punto?`<circle class="dot" cx="${k.x+k.w/2}" cy="${k.y+k.h/2}" r="15"/>`:''}</g>`).join(''));
+    const vistos=new Set(); ctx.decir('Toque cada cuadro. Si hay punto, suena alegre.','',false);
+    enlazar(ctx.lam,(i,g)=>{vistos.add(i);g.classList.add('visto');
+      if(c[i].punto){SON.bien();ctx.decir(`¡Hay punto! Revisados ${vistos.size} de 6.`,'bien');}else{SON.vacio();ctx.decir(`Aquí no hay punto. Revisados ${vistos.size} de 6.`);}
+      if(vistos.size===6){setTimeout(()=>{ctx.decir('¡Muy bien! Revisaron los 6 cuadros y encontraron 4 puntos.','bien');ctx.listo();},700);}});
+  },
+  tamanos(ctx){
+    const p=GEO.tamanos; let obj='grande', ok=0;
+    ctx.lam.innerHTML=svgBase(p.map(([x,y,g],i)=>ptHTML(i,x,y,g?22:9,'Punto '+(g?'grande':'pequeño'))).join(''));
+    ctx.decir('Busca un punto GRANDE.','',false);
+    enlazar(ctx.lam,(i,g)=>{const es=p[i][2]?'grande':'pequeño'; tono(p[i][2]?300:900,.15);
+      if(ok>=6) return;
+      if(es===obj){ok++;g.classList.add('hecho');setTimeout(SON.bien,150);obj=obj==='grande'?'pequeño':'grande';
+        if(ok>=6){ctx.decir('¡Excelente! Encontraron 3 grandes y 3 pequeños.','bien');ctx.listo();}
+        else ctx.decir(`¡Muy bien, ese es ${es}! Ahora busca un punto ${obj.toUpperCase()}. (${ok} de 6)`,'bien');}
+      else{SON.mal();ctx.decir(`Ese es un punto ${es}. Busca uno ${obj}.`,'mal');}});
+  },
+  camino(ctx){ recorrido(ctx,GEO.camino,{}, ()=>{ctx.decir('¡Llegamos al final del camino!','bien');ctx.listo();}); },
+  lineas(ctx,u){ subActividades(ctx,GEO.lineas,u); },
+  formas(ctx,u){ subActividades(ctx,GEO.formas,u); },
+  buscar(ctx,u){
+    const n=Math.min(10,Math.max(1,(u.actividad&&u.actividad.n)||10)), p=GEO.buscar.slice(0,n), hall=new Set();
+    ctx.lam.innerHTML=svgBase(p.map(([x,y],i)=>ptHTML(i,x,y,13,'Punto escondido')).join(''));
+    ctx.decir(`Encuentra los ${n} puntos. Empieza en la esquina del triángulo.`,'',false);
+    enlazar(ctx.lam,(i,g)=>{ if(hall.has(i)){SON.vacio();ctx.decir('Ese ya lo encontraste. Busca otro.');return;}
+      hall.add(i);g.classList.add('hecho');tono(480+hall.size*40,.16);
+      if(hall.size===n){ctx.decir(`¡${NUMS[n]||n}! ¡Encontraste los ${n} puntos!`,'bien');ctx.listo();}
+      else ctx.decir(`¡${(NUMS[hall.size]||hall.size).replace(/^./,c=>c.toUpperCase())}! Faltan ${n-hall.size}.`,'bien');});
+  },
+  cuerpo(ctx){
+    const c=GEO.cuerpo, ks=Object.keys(c), vistos=new Set();
+    const fig=`<circle class="cuerpo-l" cx="300" cy="72" r="38"/><rect class="cuerpo-l" x="252" y="118" width="96" height="128" rx="30"/><path class="cuerpo-l" d="M256 140 L170 228 M344 140 L430 228 M280 246 L262 342 M320 246 L338 342"/><text class="lbl" x="20" y="390">Vista de espaldas: la derecha del dibujo es la derecha del niño</text><text class="lbl" x="120" y="205">IZQUIERDA</text><text class="lbl" x="400" y="205">DERECHA</text>`;
+    ctx.lam.innerHTML=svgBase(fig+ks.map((k,i)=>{const [x,y]=c[k];return ptHTML(i,x,y,k==='centro'?14:12,c[k][2],k==='centro');}).join(''));
+    ctx.decir('Toque las partes del cuerpo: cabeza, centro, manos y pies.','',false);
+    enlazar(ctx.lam,(i,g)=>{vistos.add(i);g.classList.add('hecho');SON.paso(i);ctx.decir(c[ks[i]][2],'bien');
+      if(vistos.size===ks.length) setTimeout(()=>{ctx.decir('¡Muy bien! Ya conoces tu centro, arriba, abajo, derecha e izquierda.','bien');ctx.listo();},1600);});
+  },
+  direcciones(ctx){
+    const d=GEO.direcciones, dirs=Object.keys(d.o), T={arriba:'¡Sube! Hacia ARRIBA.',abajo:'¡Baja! Hacia ABAJO.',izquierda:'Hacia la IZQUIERDA.',derecha:'Hacia la DERECHA.'};
+    ctx.lam.innerHTML=svgBase(`<g aria-hidden="true">${dirs.map(k=>`<line x1="${d.c[0]}" y1="${d.c[1]}" x2="${d.o[k][0]}" y2="${d.o[k][1]}" stroke="#D7DCE8" stroke-width="4" stroke-dasharray="2 12" stroke-linecap="round"/>`).join('')}</g>`+ptHTML(9,d.c[0],d.c[1],14,'Centro',true)+dirs.map((k,i)=>ptHTML(i,d.o[k][0],d.o[k][1],13,k)).join('')+`<circle class="ficha" id="ficha" cx="${d.c[0]}" cy="${d.c[1]}" r="10" pointer-events="none"/>`);
+    let actual=null, ok=0, orden=[];
+    ctx.extra.innerHTML=`<div class="row" style="justify-content:center;margin-top:10px"><button class="btn btn-p" id="d-ini">Empezar juego (8 órdenes)</button></div><div class="pad-flechas" aria-label="Flechas"><span></span><button class="btn" data-k="arriba" aria-label="Arriba">↑</button><span></span><button class="btn" data-k="izquierda" aria-label="Izquierda">←</button><button class="btn" data-k="abajo" aria-label="Abajo">↓</button><button class="btn" data-k="derecha" aria-label="Derecha">→</button></div>`;
+    const ficha=$('#ficha',ctx.lam);
+    const nueva=()=>{if(!orden.length)orden=[...dirs,...dirs].sort(()=>Math.random()-.5);actual=orden.pop();ctx.decir(T[actual]);};
+    const resp=k=>{ if(!actual){ctx.decir('Primero toque "Empezar juego".','',false);return;}
+      ficha.style.transform=`translate(${d.o[k][0]-d.c[0]}px,${d.o[k][1]-d.c[1]}px)`;
+      setTimeout(()=>{ficha.style.transform='';},450);
+      if(k===actual){ok++;SON.bien();if(ok>=8){actual=null;ctx.decir('¡Lo lograste! 8 de 8 direcciones. Vuelve al centro.','bien');ctx.listo();return;} ctx.decir(`¡Muy bien! (${ok} de 8) Vuelve al centro…`,'bien',false); setTimeout(nueva,1300);}
+      else{SON.mal();ctx.decir(`Ese es ${k}. Vuelve al centro e intenta de nuevo: ${T[actual]}`,'mal');} };
+    $('#d-ini',ctx.extra).onclick=()=>{ok=0;orden=[];nueva();};
+    $$('[data-k]',ctx.extra).forEach(b=>b.onclick=()=>resp(b.dataset.k));
+    enlazar(ctx.lam,(i)=>{ if(i===9){SON.vacio();ctx.decir('Este es el centro.','',false);return;} resp(dirs[i]); });
+    const kd=e=>{const m={ArrowUp:'arriba',ArrowDown:'abajo',ArrowLeft:'izquierda',ArrowRight:'derecha'}[e.key];if(m&&actual&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();resp(m);}};
+    document.addEventListener('keydown',kd); limpiar.push(()=>document.removeEventListener('keydown',kd));
+    ctx.decir('Toque "Empezar juego". También puede usar las flechas del teclado.','',false);
+  },
+  referencia(ctx){
+    const r=GEO.referencia; let afuera=false, vueltas=0; const visit=new Set();
+    ctx.lam.innerHTML=svgBase(ptHTML(9,r.casa[0],r.casa[1],12,'Punto de partida (casa)',true)+r.pts.map(([x,y],i)=>ptHTML(i,x,y,13,'Punto '+(i+1))).join(''));
+    ctx.decir('Empieza en la casa: el punto doble de la esquina. Luego sal a buscar un punto.','',false);
+    enlazar(ctx.lam,(i,g)=>{
+      if(i===9){ if(afuera){afuera=false;vueltas++;SON.bien();
+          if(vueltas>=4){ctx.decir('¡Volviste a casa 4 veces! Ya sabes usar el punto de partida.','bien');ctx.listo();}
+          else ctx.decir(`¡Llegaste a casa! (${vueltas} de 4) Sal otra vez a buscar un punto.`,'bien'); }
+        else {SON.vacio();ctx.decir('Esta es tu casa. Ahora sal a buscar un punto.');} return; }
+      if(afuera){SON.mal();ctx.decir('Primero vuelve a casa, al punto doble.','mal');return;}
+      afuera=true;visit.add(i);g.classList.add('hecho');SON.paso(i);ctx.decir('¡Encontraste un punto! Ahora vuelve a casa.','bien');});
+  },
+  laberinto(ctx){
+    const M=GEO.laberinto, cw=W/M[0].length, ch=H/M.length; let pos, meta;
+    let s='';
+    M.forEach((fila,y)=>[...fila].forEach((c,x)=>{const cx=x*cw+cw/2, cy=y*ch+ch/2;
+      if(c==='#') s+=`<rect class="muro" x="${x*cw+2}" y="${y*ch+2}" width="${cw-4}" height="${ch-4}" rx="5"/>`;
+      else { s+=`<circle class="rastro" cx="${cx}" cy="${cy}" r="5"/>`; if(c==='S'){pos=[x,y];s+=`<circle cx="${cx}" cy="${cy}" r="16" fill="none" stroke="#1C1C1E" stroke-width="4"/>`;} if(c==='M'){meta=[x,y];s+=`<rect class="meta" x="${cx-17}" y="${cy-17}" width="34" height="34" rx="4"/>`;} }}));
+    ctx.lam.innerHTML=svgBase(s+`<circle class="ficha" id="lab-f" r="13" cx="0" cy="0"/>`,'tabindex="0" aria-label="Laberinto. Use las flechas para moverse."');
+    const f=$('#lab-f',ctx.lam); let llego=false, bloqueos=0;
+    const dib=()=>{f.setAttribute('cx',pos[0]*cw+cw/2);f.setAttribute('cy',pos[1]*ch+ch/2);}; dib();
+    const mover=(dx,dy)=>{ if(llego)return; const nx=pos[0]+dx, ny=pos[1]+dy; const c=(M[ny]||'')[nx];
+      if(!c||c==='#'){bloqueos++;SON.muro();ctx.decir('¡Uy, bloqueado! Busquemos otro camino.','mal');return;}
+      pos=[nx,ny];dib();tono(520,.06,'sine',.12);
+      if(nx===meta[0]&&ny===meta[1]){llego=true;ctx.decir(`¡Llegaste a la meta! Encontraste ${bloqueos} ${bloqueos===1?'bloqueo':'bloqueos'} en el camino.`,'bien');ctx.listo();}
+      else ctx.decir('Avanzando…','',false);};
+    ctx.extra.innerHTML=`<div class="pad-flechas"><span></span><button class="btn" data-m="0,-1" aria-label="Arriba">↑</button><span></span><button class="btn" data-m="-1,0" aria-label="Izquierda">←</button><button class="btn" data-m="0,1" aria-label="Abajo">↓</button><button class="btn" data-m="1,0" aria-label="Derecha">→</button></div>`;
+    $$('[data-m]',ctx.extra).forEach(b=>b.onclick=()=>{const [a,c]=b.dataset.m.split(',').map(Number);mover(a,c);});
+    const kd=e=>{const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];if(m&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();mover(...m);}};
+    document.addEventListener('keydown',kd); limpiar.push(()=>document.removeEventListener('keydown',kd));
+    ctx.decir('El conejito sale del punto doble. Use las flechas para llevarlo a la meta (el cuadro).','',false);
+  }
+};
+function subActividades(ctx,grupo,u){
+  const ks=Object.keys(grupo), hechos=new Set(); let cur=ks[0];
+  const pintarSub=()=>{ctx.sub.innerHTML=ks.map(k=>`<button class="btn btn-s" data-s="${k}" aria-pressed="${k===cur}">${hechos.has(k)?'✓ ':''}${grupo[k].nombre}</button>`).join('');
+    $$('[data-s]',ctx.sub).forEach(b=>b.onclick=()=>{cur=b.dataset.s;correrLimpieza();pintarSub();correr();});};
+  const correr=()=>recorrido(ctx,grupo[cur].pts,{cerrada:grupo[cur].cerrada,nombre:grupo[cur].nombre},()=>{
+    hechos.add(cur);pintarSub();
+    if(hechos.size===ks.length){ctx.decir(`¡Terminaron todas! ${ks.map(k=>grupo[k].nombre).join(', ')}.`,'bien');ctx.listo();}
+    else{const sig=ks.find(k=>!hechos.has(k));ctx.decir(`¡${grupo[cur].nombre} lista! Sigan con: ${grupo[sig].nombre}.`,'bien');SON.bien();}});
+  pintarSub(); correr();
+}
+function recorrido(ctx,pts,op,alFin){
+  ctx.lam.innerHTML=svgBase(`<path class="trazo" id="trazo" d=""/>`+pts.map(([x,y],i)=>ptHTML(i,x,y,11,i===0?'Punto de partida':'Punto '+(i+1),i===0)).join('')+`<circle class="dedo" id="dedo" cx="0" cy="0" r="22" style="display:none" pointer-events="none"/>`);
+  let idx=0, cerrar=false, fin=false; const tr=$('#trazo',ctx.lam), gs=$$('[data-i]',ctx.lam), d=[];
+  const marca=()=>{gs.forEach(g=>g.classList.remove('sig'));const k=cerrar?0:idx;if(!fin&&gs[k])gs[k].classList.add('sig');};
+  const avanzar=(i)=>{ if(fin) return;
+    if(cerrar){ if(i===0){d.push(pts[0]);tr.setAttribute('d','M'+d.map(p=>p.join(' ')).join(' L'));fin=true;marca();SON.fin();alFin();} else {SON.mal();ctx.decir('Vuelve al primer punto, el doble, para cerrar la figura.','mal');} return; }
+    if(i===idx){ gs[i].classList.add('hecho');d.push(pts[i]);tr.setAttribute('d','M'+d.map(p=>p.join(' ')).join(' L'));SON.paso(i);idx++;
+      if(idx===pts.length){ if(op.cerrada){cerrar=true;ctx.decir('¡Casi! Ahora vuelve al punto de partida para cerrar la figura.','bien');marca();} else {fin=true;marca();alFin();} }
+      else {ctx.decir(`Punto ${idx} de ${pts.length}. Sigue al siguiente.`,'',false);marca();} }
+    else if(i<idx){SON.vacio();ctx.decir('Ese ya lo tocaste. Sigue adelante.','',false);}
+    else {SON.mal();ctx.decir('Ese no. Sigue el camino: busca el punto que está al lado.','mal');} };
+  enlazar(ctx.lam,avanzar); marca();
+  ctx.decir(`${op.nombre?op.nombre+': e':'E'}mpieza en el punto doble y sigue los puntos en orden.`,'',false);
+  // Demostración animada (ejemplo de ejecución para el acompañante)
+  ctx.demo.hidden=false;
+  ctx.demo.onclick=()=>{ const dedo=$('#dedo',ctx.lam); if(!dedo) return; let k=0; const seq=op.cerrada?[...pts,pts[0]]:pts;
+    dedo.style.display='';dedo.setAttribute('cx',0);dedo.setAttribute('cy',0);
+    const paso=()=>{ if(!dedo.isConnected) return; if(k>=seq.length){setTimeout(()=>{dedo.style.display='none';ctx.decir('Así se hace. Ahora inténtenlo ustedes.','',true);},500);return;}
+      dedo.style.transform=`translate(${seq[k][0]}px,${seq[k][1]}px)`;SON.paso(Math.min(k,pts.length));k++;const t=setTimeout(paso,650);limpiar.push(()=>clearTimeout(t));};
+    dedo.style.transform=`translate(${seq[0][0]}px,${seq[0][1]}px)`; ctx.decir('Mire: el dedo sale del punto doble y avanza punto por punto.','',false); const t0=setTimeout(paso,400); limpiar.push(()=>clearTimeout(t0)); };
+}
+
+/* =========================================================
+   LÁMINAS PARA IMPRIMIR (zona táctil: solo relieve, sin color)
+   ========================================================= */
+function pSVG(inner){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/><path d="M14 14 H50 L14 50 Z" fill="#000"/>${inner}</svg>`;}
+function pd(x,y,r){return `<circle cx="${x}" cy="${y}" r="${(r*S.ajustes.escala).toFixed(1)}" fill="#000"/>`;}
+function pdoble(x,y,r){const k=S.ajustes.escala;return pd(x,y,r)+`<circle cx="${x}" cy="${y}" r="${((r+9)*k).toFixed(1)}" fill="none" stroke="#000" stroke-width="${(5*k).toFixed(1)}"/>`;}
+function laminas(u){
+  const t=(u.actividad||{}).tipo||'ninguna'; const out=[];
+  const seqSVG=(pts)=>pSVG(pts.map(([x,y],i)=>i===0?pdoble(x,y,11):pd(x,y,11)).join(''));
+  if(t==='presencia') out.push({titulo:'Lámina: ¿hay punto?',svg:pSVG(GEO.presencia.map(c=>`<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="10" fill="none" stroke="#000" stroke-width="3"/>`+(c.punto?pd(c.x+c.w/2,c.y+c.h/2,15):'')).join(''))});
+  if(t==='tamanos') out.push({titulo:'Lámina: grandes y pequeños',svg:pSVG(GEO.tamanos.map(([x,y,g])=>pd(x,y,g?22:9)).join(''))});
+  if(t==='camino') out.push({titulo:'Lámina: el camino',svg:seqSVG(GEO.camino)});
+  if(t==='buscar'){const n=Math.min(10,(u.actividad&&u.actividad.n)||10);out.push({titulo:`Lámina: ${n} puntos escondidos`,svg:pSVG(GEO.buscar.slice(0,n).map(([x,y])=>pd(x,y,13)).join(''))});}
+  if(t==='referencia') out.push({titulo:'Lámina: punto de partida',svg:pSVG(pdoble(...GEO.referencia.casa,12)+GEO.referencia.pts.map(([x,y])=>pd(x,y,13)).join(''))});
+  if(t==='direcciones'){const d=GEO.direcciones;out.push({titulo:'Lámina: direcciones',svg:pSVG(pdoble(...d.c,14)+Object.values(d.o).map(([x,y])=>pd(x,y,13)+filaPts(d.c[0],d.c[1],x,y,6).slice(1,-1).map(([a,b])=>pd(a,b,4)).join('')).join(''))});}
+  if(t==='cuerpo'){const c=GEO.cuerpo;out.push({titulo:'Lámina: mi cuerpo (de espaldas)',svg:pSVG(`<g fill="none" stroke="#000" stroke-width="5" stroke-linecap="round"><circle cx="300" cy="72" r="38"/><rect x="252" y="118" width="96" height="128" rx="30"/><path d="M256 140 L170 228 M344 140 L430 228 M280 246 L262 342 M320 246 L338 342"/></g>`+Object.entries(c).map(([k,[x,y]])=>k==='centro'?pdoble(x,y,12):pd(x,y,12)).join(''))});}
+  if(t==='laberinto'){const M=GEO.laberinto,cw=W/M[0].length,ch=H/M.length;let s='';M.forEach((f,y)=>[...f].forEach((c,x)=>{const cx=x*cw+cw/2,cy=y*ch+ch/2;if(c==='#')s+=`<rect x="${x*cw+2}" y="${y*ch+2}" width="${cw-4}" height="${ch-4}" rx="5" fill="#000"/>`;else if(c==='S')s+=pdoble(cx,cy,7);else if(c==='M')s+=`<rect x="${cx-17}" y="${cy-17}" width="34" height="34" rx="4" fill="none" stroke="#000" stroke-width="5"/>`;else s+=pd(cx,cy,5);}));out.push({titulo:'Lámina: laberinto',svg:pSVG(s)});}
+  if(t==='lineas') Object.values(GEO.lineas).forEach(l=>out.push({titulo:'Lámina: línea '+l.nombre.toLowerCase(),svg:seqSVG(l.pts)}));
+  if(t==='formas') Object.values(GEO.formas).forEach(l=>out.push({titulo:'Lámina: '+l.nombre.toLowerCase(),svg:seqSVG(l.pts)}));
+  return out;
+}
+function slug(s){return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40);}
+async function entregar(nombre,datos){
+  if(DL){try{await DL.save({filename:nombre,data:datos});toast('Archivo listo: '+nombre);}catch(e){if(e&&e.code==='declined')return;toast('No se pudo descargar ('+(e&&e.code||'error')+').');}return;}
+  try{await navigator.clipboard.writeText(datos);toast('Copiado. Péguelo en un archivo de texto y guárdelo como '+nombre);}catch(e){toast('La descarga no está disponible en esta vista.');}
+}
+function descargarSVG(u){const ls=laminas(u);if(!ls.length)return;const n=numEnModulo(u).i;
+  if(ls.length===1) return entregar(`lamina-${n}-${slug(u.titulo)}.svg`,ls[0].svg.replace('<svg ','<svg width="297mm" height="198mm" '));
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="297mm" height="${198*ls.length}mm" viewBox="0 0 ${W} ${H*ls.length}">${ls.map((l,i)=>`<g transform="translate(0 ${H*i})">${l.svg.replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')}</g>`).join('')}</svg>`;
+  entregar(`laminas-${n}-${slug(u.titulo)}.svg`,svg);}
+function descargarCartilla(u,conDocente=esDocente()){
+  const n=numEnModulo(u), m=MODULOS.find(x=>x.id===u.modulo);
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Cartilla ${n.i} - ${esc(u.titulo)}</title><style>
+@page{size:A4 landscape;margin:12mm}body{font-family:Arial,Helvetica,sans-serif;font-size:15pt;color:#111;margin:0}
+.pag{page-break-after:always;min-height:180mm;padding:4mm}.pag:last-child{page-break-after:auto}
+.zona{display:inline-block;background:#FFC233;padding:4px 12px;border-radius:6px;font-weight:bold;font-size:11pt;letter-spacing:.05em}
+h1{font-size:24pt;margin:8px 0}h2{font-size:15pt;margin:14px 0 4px;color:#13203B}ol,ul{margin:4px 0;padding-left:22px}li{margin:3px 0}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12mm}.caja{border:2px solid #13203B;border-radius:8px;padding:8px 12px;margin-top:8px}
+.tactil svg{width:100%;height:178mm;display:block}.pie{font-size:8pt;color:#777;text-align:right}
+</style></head><body>
+<section class="pag"><span class="zona">ZONA DEL ACOMPAÑANTE · Módulo ${m.num} · Unidad ${n.i}</span><h1>${esc(u.titulo)}</h1><p><b>Para qué sirve:</b> ${esc(u.objetivo)}</p>
+<div class="cols"><div><h2>Paso a paso</h2><ol>${(u.pasos||[]).map(p=>`<li>${esc(p)} ☐</li>`).join('')}</ol></div><div><h2>Lo que necesitan</h2><ul>${(u.materiales||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><div class="caja"><b>Cómo guiar la mano:</b> ${esc(u.mano||'')}</div><div class="caja"><b>Si algo no sale:</b> ${esc(u.consejo||'')}</div>
+<p style="margin-top:10px">¿Cómo le fue? ☐ Lo logró solo &nbsp; ☐ Con ayuda &nbsp; ☐ Aún no &nbsp;&nbsp; Fecha: ________</p></div></div></section>
+${conDocente?`<section class="pag"><span class="zona">GESTIÓN DOCENTE</span><h1>${esc(u.titulo)}</h1><h2>Competencia</h2><p>${esc(u.competencia||'')}</p><h2>Resultado de aprendizaje esperado</h2><p>${esc(u.resultado||'')}</p><h2>Criterio de evaluación formativa</h2><p>${esc(u.criterio||'')}</p><h2>Etapa</h2><p>${esc(ETAPAS[u.etapa]||'')}</p></section>`:''}
+${laminas(u).map(l=>`<section class="pag tactil">${l.svg}<p class="pie">${esc(l.titulo)} · Unidad ${n.i} · Camino Táctil · El triángulo va arriba a la izquierda</p></section>`).join('')}
+</body></html>`;
+  entregar(`cartilla-${n.i}-${slug(u.titulo)}.html`,html);
+}
+
+/* =========================================================
+   PANEL DOCENTE
+   ========================================================= */
+function renderDocente(){
+  if(!esDocente()){location.hash='#aula';return;}
+  const seq=secuencia(), N=seq.length;
+  const lista=S.modo==='nube'?S.alumnos:(S.perfil?[{id:'local',perfil:S.perfil,done:S.done,intentos:S.intentos,actualizado:Date.now()}]:[]);
+  const conPerfil=lista.filter(a=>a.perfil);
+  const tot=conPerfil.map(a=>seq.filter(u=>(a.done||{})[u.id]).length);
+  const prom=conPerfil.length?Math.round(tot.reduce((x,y)=>x+y,0)/conPerfil.length*10)/10:0;
+  const semana=conPerfil.filter(a=>a.actualizado&&Date.now()-a.actualizado<7*864e5).length;
+  const filas=conPerfil.sort((a,b)=>(b.actualizado||0)-(a.actualizado||0)).map((a,k)=>{
+    const d=a.done||{}, h=seq.filter(u=>d[u.id]).length, p=N?Math.round(h*100/N):0, sig=seq.find(u=>!d[u.id]);
+    const so=Object.values(d).filter(x=>x.logro==='solo').length, ay=Object.values(d).filter(x=>x.logro==='ayuda').length, au=Object.values(a.intentos||{}).reduce((x,y)=>x+y,0);
+    return `<tr><td><b>${esc(a.perfil.nino)}</b>${a.id===S.uid?' <span class="muted">(usted)</span>':''}</td><td>${esc(a.perfil.acompanante)}<br><span class="muted" style="font-size:.85rem">${esc(a.perfil.relacion||'')}</span></td>
+    <td style="min-width:160px"><div class="barra"><i style="width:${p}%"></i></div><span class="muted num" style="font-size:.85rem">${h} de ${N}</span></td><td>${sig?esc(sig.titulo):'<b>Terminó</b>'}</td>
+    <td>${so?`<span class="pill solo">${so} solo</span>`:''}${ay?`<span class="pill ayuda">${ay} con ayuda</span>`:''}${au?`<span class="pill aun">${au} por repetir</span>`:''}</td><td>${fecha(a.actualizado)}</td><td><button class="btn btn-s" data-al="${k}">Ver</button></td></tr>`;}).join('');
+  const contenido=MODULOS.map(m=>`<div class="card cont-mod"><div class="cont-row" style="border-top:0"><h3>Módulo ${m.num} · ${esc(m.titulo)}</h3><button class="btn btn-s" data-nueva="${m.id}">+ Nueva unidad</button></div>
+    ${unidadesDe(m.id,true).map((u,i)=>`<div class="cont-row ${u.oculta?'oculta':''}"><span><b>${i+1}.</b> ${esc(u.titulo)} ${u.custom?'<span class="pill ayuda">creada</span>':''}${u.editada?'<span class="pill ayuda">editada</span>':''}${u.oculta?'<span class="pill aun">oculta</span>':''}</span><span class="row" style="gap:6px">
+      <a class="btn btn-s" href="#u-${u.id}">Abrir</a><button class="btn btn-s" data-ed="${u.id}">Editar</button>
+      ${u.custom?`<button class="btn btn-s" data-del="${u.id}">Eliminar</button>`:`<button class="btn btn-s" data-oc="${u.id}">${u.oculta?'Mostrar':'Ocultar'}</button>${u.editada?`<button class="btn btn-s" data-res="${u.id}">Restaurar original</button>`:''}`}</span></div>`).join('')||'<div class="cont-row"><span class="muted">Sin unidades todavía.</span></div>'}</div>`).join('');
+  const k=S.ajustes.escala;
+  $('#main').innerHTML=`${banner()}<span class="eyebrow">Panel docente</span><h1>Seguimiento y gestión</h1>
+  ${S.modo==='local'?'<p class="muted" style="margin-top:6px">Modo de prueba: aquí solo aparece el niño registrado en este dispositivo. Al publicar la app y compartirla, verá a todos los niños.</p>':''}
+  <div class="tiles"><div class="card tile"><span class="eyebrow">Niños inscritos</span><b>${conPerfil.length}</b></div><div class="card tile"><span class="eyebrow">Unidades en promedio</span><b>${prom}<span class="muted" style="font-size:1rem"> / ${N}</span></b></div><div class="card tile"><span class="eyebrow">Activos esta semana</span><b>${semana}</b></div></div>
+  <section><h2>Avance de cada niño</h2><div class="card tabla-w" style="margin-top:12px">${filas?`<table><thead><tr><th>Niño</th><th>Acompañante</th><th>Avance</th><th>Unidad actual</th><th>Logros</th><th>Última vez</th><th></th></tr></thead><tbody>${filas}</tbody></table>`:`<p class="pad muted">${S.cargando?'Cargando…':'Todavía no hay niños inscritos. Comparta la app con las familias: cuando escriban el nombre del niño, aparecerán aquí.'}</p>`}</div></section>
+  <section class="sec"><h2>Gestión de contenidos</h2><p class="muted" style="margin-top:4px">Cree, edite, oculte o elimine unidades. Los cambios les llegan a todas las familias.</p>${contenido}</section>
+  <section class="sec"><h2>Calibración de impresión táctil</h2><div class="card pad calib" style="margin-top:12px"><div class="stack"><label class="f" for="cal">Tamaño del punto en relieve: <span id="cal-v">${Math.round(k*100)}%</span><input type="range" id="cal" min="0.7" max="1.5" step="0.05" value="${k}"></label><p class="muted" style="font-size:.9rem">Si los puntos salen muy juntos o ásperos y cansan al niño, bájelo. Si casi no se sienten, súbalo. Se aplica a todas las láminas y cartillas que descargue.</p></div><div class="lam" id="cal-prev"></div></div></section>`;
+  const prev=()=>{$('#cal-prev').innerHTML=pSVG(pdoble(80,200,12)+filaPts(180,200,520,200,6).map(([x,y],i)=>pd(x,y,i%2?9:13)).join(''));};prev();
+  $('#cal').oninput=e=>{S.ajustes.escala=+e.target.value;$('#cal-v').textContent=Math.round(S.ajustes.escala*100)+'%';LS.set('ct-ajustes',S.ajustes);prev();};
+  const orden=conPerfil;
+  $$('[data-al]').forEach(b=>b.onclick=()=>dlgAlumno(orden[+b.dataset.al]));
+  $$('[data-nueva]').forEach(b=>b.onclick=()=>dlgEditar(null,b.dataset.nueva));
+  $$('[data-ed]').forEach(b=>b.onclick=()=>dlgEditar(unidad(b.dataset.ed)));
+  $$('[data-oc]').forEach(b=>b.onclick=()=>{const id=b.dataset.oc,c={...(S.contenido[id]||{})};c.oculta=!unidad(id).oculta;guardarContenido(id,c);});
+  $$('[data-res]').forEach(b=>b.onclick=()=>confirmar('¿Restaurar el texto original de esta unidad?','Restaurar',()=>guardarContenido(b.dataset.res,null)));
+  $$('[data-del]').forEach(b=>b.onclick=()=>confirmar('¿Eliminar esta unidad? Las familias dejarán de verla.','Eliminar',()=>guardarContenido(b.dataset.del,null)));
+}
+
+/* =========================================================
+   DIÁLOGOS
+   ========================================================= */
+function abrirDlg(html,alAbrir){const d=$('#dlg');d.innerHTML=html;try{d.showModal();}catch(e){d.setAttribute('open','');}$$('[data-cerrar]',d).forEach(b=>b.onclick=()=>d.close());if(alAbrir)alAbrir(d);}
+function confirmar(txt,ok,fn){abrirDlg(`<div class="dlg-c"><h2>${esc(txt)}</h2></div><div class="dlg-pie"><button class="btn" data-cerrar>Cancelar</button><button class="btn btn-p" id="c-ok">${esc(ok)}</button></div>`,d=>{$('#c-ok',d).onclick=()=>{d.close();fn();};});}
+function dlgAjustes(){
+  abrirDlg(`<div class="dlg-c"><h2>Ajustes</h2><div class="ajustes">
+    <label><input type="checkbox" id="a-grande" ${S.ajustes.grande?'checked':''}> Letra más grande</label>
+    <label><input type="checkbox" id="a-contraste" ${S.ajustes.contraste?'checked':''}> Alto contraste (amarillo sobre negro)</label>
+    <label><input type="checkbox" id="a-voz" ${S.ajustes.voz?'checked':''} ${vozDisponible()?'':'disabled'}> Hablar en voz alta durante las láminas${vozDisponible()?'':' (no disponible aquí)'}</label></div></div>
+    <div class="dlg-pie"><button class="btn btn-p" data-cerrar>Listo</button></div>`,d=>{
+    $('#a-grande',d).onchange=e=>{S.ajustes.grande=e.target.checked;aplicarAjustes();};
+    $('#a-contraste',d).onchange=e=>{S.ajustes.contraste=e.target.checked;aplicarAjustes();};
+    $('#a-voz',d).onchange=e=>{S.ajustes.voz=e.target.checked;aplicarAjustes();if(!e.target.checked)callar();};});
+}
+function dlgPerfil(){
+  const p=S.perfil||{};
+  abrirDlg(`<form id="fp"><div class="dlg-c"><h2>Datos del acompañamiento</h2>
+    <label class="f" for="e-nino">Nombre del niño o niña<input type="text" id="e-nino" value="${esc(p.nino)}" required></label>
+    <label class="f" for="e-acomp">Su nombre<input type="text" id="e-acomp" value="${esc(p.acompanante)}" required></label>
+    <label class="f" for="e-rel">Usted es<select id="e-rel">${['Mamá','Papá','Abuela o abuelo','Tía o tío','Docente de aula','Otro acompañante'].map(o=>`<option ${o===p.relacion?'selected':''}>${o}</option>`).join('')}</select></label></div>
+    <div class="dlg-pie"><button class="btn" type="button" data-cerrar>Cancelar</button><button class="btn btn-p" type="submit">Guardar</button></div></form>`,d=>{
+    $('#fp',d).onsubmit=e=>{e.preventDefault();S.perfil={nino:$('#e-nino',d).value.trim(),acompanante:$('#e-acomp',d).value.trim(),relacion:$('#e-rel',d).value};guardar();d.close();render();};});
+}
+function dlgAlumno(a){
+  if(!a) return; const seq=secuencia(), d=a.done||{};
+  abrirDlg(`<div class="dlg-c"><span class="eyebrow">Seguimiento</span><h2>${esc(a.perfil.nino)}</h2><p class="muted">Acompaña: ${esc(a.perfil.acompanante)} (${esc(a.perfil.relacion||'')}) · Última actividad ${fecha(a.actualizado)}</p>
+    <div class="tabla-w"><table><thead><tr><th>Unidad</th><th>Estado</th><th>Práctica digital</th><th>Fecha</th></tr></thead><tbody>
+    ${seq.map((u,i)=>{const x=d[u.id], it=(a.intentos||{})[u.id];return `<tr><td>${i+1}. ${esc(u.titulo)}</td><td>${x?(x.logro==='solo'?'<span class="pill solo">Solo</span>':'<span class="pill ayuda">Con ayuda</span>'):it?`<span class="pill aun">${it} ${it===1?'intento':'intentos'}</span>`:'<span class="muted">Pendiente</span>'}</td><td>${(a.actividades||{})[u.id]?'✓':'—'}</td><td>${x?fecha(x.t):'—'}</td></tr>`;}).join('')}</tbody></table></div>
+    ${S.modo==='nube'?`<label class="f" for="n-doc">Nota del docente para el seguimiento<textarea id="n-doc">${esc(a.notaDocente||'')}</textarea></label>`:''}</div>
+    <div class="dlg-pie">${S.modo==='nube'?'<button class="btn" id="n-reset">Reiniciar avance</button>':''}<button class="btn" data-cerrar>Cerrar</button>${S.modo==='nube'?'<button class="btn btn-p" id="n-save">Guardar nota</button>':''}</div>`,dl=>{
+    const sv=$('#n-save',dl); if(sv) sv.onclick=()=>{const ref=DB.doc('progreso/'+a.id);enCola(ref.path,()=>ref.update({notaDocente:$('#n-doc',dl).value})).then(()=>toast('Nota guardada.'));dl.close();};
+    const rs=$('#n-reset',dl); if(rs) rs.onclick=()=>{dl.close();confirmar(`¿Reiniciar todo el avance de ${a.perfil.nino}? Volverá a empezar en la Unidad 1.`,'Reiniciar',()=>{const ref=DB.doc('progreso/'+a.id);enCola(ref.path,()=>ref.set({perfil:a.perfil,notaDocente:a.notaDocente||'',done:{},checks:{},actividades:{},intentos:{},actualizado:Date.now()})).then(()=>toast('Avance reiniciado.'));});};
+  });
+}
+function dlgEditar(u,modNuevo){
+  const nuevo=!u; const x=u||{titulo:'',objetivo:'',duracion:'15 min',materiales:[],pasos:[],mano:'',consejo:'',competencia:'',resultado:'',criterio:'',etapa:modNuevo==='m2'?5:modNuevo==='m3'?6:1,actividad:{tipo:'buscar',n:5}};
+  const esCustom=nuevo||x.custom; const at=(x.actividad||{}).tipo;
+  abrirDlg(`<form id="fe"><div class="dlg-c"><h2>${nuevo?'Nueva unidad':'Editar unidad'}</h2>
+    <label class="f" for="x-tit">Título<input type="text" id="x-tit" value="${esc(x.titulo)}" required></label>
+    <div class="grid2"><label class="f" for="x-dur">Duración<input type="text" id="x-dur" value="${esc(x.duracion)}"></label>
+    <label class="f" for="x-eta">Etapa<select id="x-eta">${Object.entries(ETAPAS).map(([k,v])=>`<option value="${k}" ${+k===+x.etapa?'selected':''}>${v}</option>`).join('')}</select></label></div>
+    <label class="f" for="x-obj">Para qué sirve (objetivo)<textarea id="x-obj">${esc(x.objetivo)}</textarea></label>
+    <label class="f" for="x-mat">Lo que necesitan (uno por línea)<textarea id="x-mat">${esc((x.materiales||[]).join('\n'))}</textarea></label>
+    <label class="f" for="x-pas">Paso a paso (uno por línea)<textarea id="x-pas" style="min-height:140px">${esc((x.pasos||[]).join('\n'))}</textarea></label>
+    <label class="f" for="x-man">Cómo guiar la mano<textarea id="x-man">${esc(x.mano)}</textarea></label>
+    <label class="f" for="x-con">Si algo no sale<textarea id="x-con">${esc(x.consejo)}</textarea></label>
+    <label class="f" for="x-cmp">Competencia (docente)<input type="text" id="x-cmp" value="${esc(x.competencia)}"></label>
+    <label class="f" for="x-res">Resultado esperado (docente)<input type="text" id="x-res" value="${esc(x.resultado)}"></label>
+    <label class="f" for="x-cri">Criterio de evaluación (docente)<input type="text" id="x-cri" value="${esc(x.criterio)}"></label>
+    ${esCustom?`<div class="grid2"><label class="f" for="x-act">Lámina interactiva<select id="x-act"><option value="buscar" ${at==='buscar'?'selected':''}>Buscar puntos escondidos</option><option value="ninguna" ${at==='ninguna'?'selected':''}>Sin lámina (solo material físico)</option></select></label>
+    <label class="f" for="x-n">Cantidad de puntos (1 a 10)<input type="number" id="x-n" min="1" max="10" value="${(x.actividad&&x.actividad.n)||5}"></label></div>`:''}
+    </div><div class="dlg-pie"><button class="btn" type="button" data-cerrar>Cancelar</button><button class="btn btn-p" type="submit">${nuevo?'Crear unidad':'Guardar cambios'}</button></div></form>`,d=>{
+    $('#fe',d).onsubmit=e=>{e.preventDefault();
+      const lineas=s=>s.split('\n').map(t=>t.trim()).filter(Boolean);
+      const o={titulo:$('#x-tit',d).value.trim(),duracion:$('#x-dur',d).value.trim(),etapa:+$('#x-eta',d).value,objetivo:$('#x-obj',d).value.trim(),materiales:lineas($('#x-mat',d).value),pasos:lineas($('#x-pas',d).value),mano:$('#x-man',d).value.trim(),consejo:$('#x-con',d).value.trim(),competencia:$('#x-cmp',d).value.trim(),resultado:$('#x-res',d).value.trim(),criterio:$('#x-cri',d).value.trim()};
+      if(!o.titulo) return;
+      if(esCustom){o.actividad={tipo:$('#x-act',d).value,n:Math.min(10,Math.max(1,+$('#x-n',d).value||5))};}
+      let id;
+      if(nuevo){id='c'+Date.now().toString(36);const l=unidadesDe(modNuevo,true);Object.assign(o,{custom:true,modulo:modNuevo,orden:l.length?Math.max(...l.map(z=>z.orden))+1:1});}
+      else if(x.custom){id=x.id;Object.assign(o,{custom:true,modulo:x.modulo,orden:x.orden,oculta:!!x.oculta});}
+      else {id=x.id;o.oculta=!!x.oculta;}
+      d.close();guardarContenido(id,o);toast(nuevo?'Unidad creada.':'Cambios guardados.');
+      if(nuevo) location.hash='#u-'+id;};
+  });
+}
+
+/* =========================================================
+   RUTAS Y ARRANQUE
+   ========================================================= */
+function render(){
+  renderTop();
+  const h=location.hash.slice(1);
+  if(h.startsWith('u-')) renderUnidad(h.slice(2));
+  else { correrLimpieza(); if(h==='docente') renderDocente(); else renderAula(); }
+}
+let ultimaRuta=location.hash;
+window.addEventListener('hashchange',()=>{ if(location.hash!==ultimaRuta){ultimaRuta=location.hash;callar();if(location.hash.startsWith('#u-'))S.tab='guia';render();window.scrollTo(0,0);} });
+render();
+
+function refrescarSuave(){
+  const h=location.hash.slice(1);
+  if(h.startsWith('u-')){const u=unidad(h.slice(2));if(u&&$('#lado')){pintarLado(u);pintarCierre(u);renderTop();}else render();}
+  else render();
+}
+async function usar(n){try{return window.claude&&window.claude.use?await window.claude.use(n):null;}catch(e){return null;}}
+(async function conectar(){
+  if(!(window.claude&&window.claude.use)) return;
+  S.cargando=true; renderTop();
+  const [user,db,tts,dl]=await Promise.all([usar('user'),usar('db'),usar('tts'),usar('downloads')]);
+  USER=user; TTS=tts; DL=dl;
+  try{ if(USER){ S.uid=await USER.id(); S.puedeDocente=!!(await USER.canEdit()) || !!(await USER.isOwner()); } }catch(e){}
+  if(S.puedeDocente && LS.get('ct-rol',null)===null) S.rol='docente';
+  if(!S.puedeDocente && S.rol==='docente' && db) S.rol='acompanante';
+  if(db&&S.uid){
+    DB=db; S.modo='nube';
+    let t=setTimeout(()=>{S.cargando=false;toast('No pudimos conectar con la nube todavía. Puede seguir trabajando.');renderTop();},10000);
+    DB.doc('progreso/'+S.uid).onSnapshot(sn=>{
+      clearTimeout(t); S.cargando=false;
+      if(sn.metadata.hasPendingWrites||S.pendiente) return;
+      if(sn.exists){const d=sn.data();S.existe=true;S.perfil=d.perfil||S.perfil;S.done={...(d.done||{})};S.checks={...(d.checks||{})};S.actividades={...(d.actividades||{})};S.intentos={...(d.intentos||{})};S.notaDocente=d.notaDocente||'';LS.set('ct-progreso',datosProgreso());}
+      else if(!sn.metadata.fromCache){S.existe=false; if(S.perfil) guardar();}
+      refrescarSuave();
+    },e=>{clearTimeout(t);S.cargando=false;errorDb(e);renderTop();});
+    DB.collection('contenido').onSnapshot(sn=>{const c={};sn.docs.forEach(x=>{c[x.id]=x.data();});S.contenido=c;LS.set('ct-contenido',c);refrescarSuave();},e=>{});
+    if(S.puedeDocente){
+      DB.collection('progreso').onSnapshot(sn=>{S.alumnos=sn.docs.map(x=>({id:x.id,...x.data()}));if(location.hash==='#docente')render();},e=>{});
+    }
+  } else { S.cargando=false; }
+  render();
+})();
+</script>
+</body>
+</html>
