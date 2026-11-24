@@ -1,0 +1,6 @@
+{
+  "name": "Folio Tactile",
+  "description": "Typhlological tactile plate drafting studio, 6-dot and 8-dot Braille cell simulator, and PIAF swell-paper specimen archive.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
